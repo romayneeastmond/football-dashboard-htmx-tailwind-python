@@ -1,4 +1,4 @@
-# Football Scores & Standings Dashboard
+# ⚽ Football Scores & Standings Dashboard
 
 A modern, responsive football dashboard built with **Flask**, **HTMX**, and **Tailwind CSS**. This application scrapes real-time data from ESPN (via stable API endpoints) to provide up-to-date league standings, upcoming fixtures, and match results.
 
@@ -70,3 +70,7 @@ This project is open-source and available under the **MIT License**. Feel free t
 
 ---
 *Created for portfolio demonstration purposes.*
+
+## ⚽ Screenshot
+
+<img alt="Image" src="https://github.com/user-attachments/assets/69102486-1a90-4840-893a-5975fd1453b4" />

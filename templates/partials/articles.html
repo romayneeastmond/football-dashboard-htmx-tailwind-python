@@ -1,0 +1,44 @@
+<div class="space-y-4">
+	<div class="bg-white border col-span-1 p-4 overflow-hidden shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white">
+		<a href="{{ featured.link }}" target="_blank">
+			<img src="{{ featured.image }}" alt="{{ featured.title }}" class="border w-full h-80 object-cover transition-all duration-300 ease-in-out dark:border-zinc-700">
+			<div class="py-2">
+				<p class="font-medium text-sm">
+					{{ featured.title }}
+				</p>
+				<p class="font-medium my-2 text-xs">
+					{{ featured.date }}
+				</p>
+				<span class="text-gray-300 text-xs md:leading-tight">
+					{{ featured.link }}
+				</span>
+			</div>
+			<div class="py-2 text-right text-xs">
+				Source: {{ featured.source }}
+			</div>
+		</a>
+	</div>
+	<div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4" style="margin-top: 0;">
+		{% for article in articles %}
+		<div class="bg-white border col-span-1 p-4 overflow-hidden transform transition duration-200 hover:scale-105 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white">
+			<a href="{{ article.link }}" target="_blank">
+				<img src="{{ article.image }}" alt="{{ article.title }}" class="border w-full h-auto transition-all duration-300 ease-in-out dark:border-zinc-700">
+				<div class="py-2">
+					<p class="font-medium text-sm">
+						{{ article.title }}
+					</p>
+					<p class="font-medium my-2 text-xs">
+						{{ featured.date }}
+					</p>
+					<span class="text-gray-300 text-xs md:leading-tight">
+						{{ article.link }}
+					</span>
+				</div>
+				<div class="py-2 text-right text-xs">
+					Source: {{ article.source }}
+				</div>
+			</a>
+		</div>
+		{% endfor %}
+	</div>
+</div>

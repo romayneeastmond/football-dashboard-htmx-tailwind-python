@@ -1,0 +1,70 @@
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# =========================
+# Operating System Files
+# =========================
+
+# OSX
+# =========================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# SVN
+.svn
+
+#phpStorm
+.idea
+
+# Visual Studio
+.vs
+.vscode
+
+.deployment
+__pycache__/
+*.pyc
+
+# Python virtual environment
+.venv/
+
+# Flask log
+flask.log
+
+# Scratch / dev-only files
+can.html
+dom.html
+espn.html
+cpl_api_dump.json
+raw.json

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Football Homepage</title>
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon" sizes="48x48" />
+	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon" />
+	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.3.1/styles/default.min.css" rel="stylesheet" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.3.1/styles/default.min.css" rel="stylesheet" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://unpkg.com/htmx.org"></script>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.3.1/highlight.min.js"></script>
+	<script>
+		tailwind.config = {
+			darkMode: "selector"
+		}
+
+		const toggleDarkMode = (enabled) => {
+			if (enabled === true) {
+				$("html").addClass("dark");
+			} else {
+				$("html").removeClass("dark");
+			}
+
+			localStorage.setItem("htmx-scores-darkMode", enabled);
+		}
+
+		const backToTopClick = () => {
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+
+		window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", event => {
+			if (event.matches === "dark") {
+				$("html").addClass("dark");
+			} else {
+				$("html").removeClass("dark");
+			}
+		});
+
+		if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+			$("html").addClass("dark");
+		}
+
+		window.addEventListener("scroll", function () {
+			if (window.scrollY > 200) {
+				$("#backToTop").removeClass("opacity-0 pointer-events-none");
+				$("#backToTop").addClass("opacity-100 pointer-events-auto");
+			} else {
+				$("#backToTop").removeClass("opacity-100 pointer-events-auto");
+				$("#backToTop").addClass("opacity-0 pointer-events-none");
+			}
+		});
+
+		$(document).ready(function () {
+			if (localStorage.getItem("htmx-scores-darkMode") === "true") {
+				$("html").addClass("dark");
+
+				$("#dark-mode-button").addClass("hidden");
+				$("#light-mode-button").removeClass("hidden");
+			}
+		});
+
+		const formatTimesToLocal = () => {
+			$(".parse-time").each(function () {
+				const el = $(this);
+				if (el.attr("data-converted")) return;
+
+				let bstTime = el.attr("data-bst");
+				let match = bstTime.match(/(\d{1,2}):(\d{2})/);
+				if (match) {
+					let hours = parseInt(match[1], 10);
+					let minutes = parseInt(match[2], 10);
+
+					let date = new Date();
+					date.setUTCHours(hours - 1, minutes, 0, 0);
+
+					let localTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+					el.text(localTime);
+					el.attr("data-converted", "true");
+				}
+			});
+		};
+
+		$(document).on('htmx:afterSwap', function (event) {
+			if (event.target.id === "upcoming-container" || event.target.id === "search-results") {
+				formatTimesToLocal();
+			}
+			if (event.target.id === "search-results") {
+				syncSearchSpoiler();
+			}
+		});
+
+		function applyScoresState(wrapper, show) {
+			if (!wrapper) return;
+			const actualScores = wrapper.querySelectorAll('.actual-score');
+
+			actualScores.forEach(el => {
+				const grid = el.closest('.grid');
+				if (!grid) return;
+				const homeTeam = grid.querySelector('.team-home');
+				const awayTeam = grid.querySelector('.team-away');
+
+				if (show) {
+					el.classList.remove('opacity-0');
+					let scoreText = el.innerText;
+					let parts = scoreText.split('-');
+					if (parts.length === 2) {
+						let home = parseInt(parts[0].trim());
+						let away = parseInt(parts[1].trim());
+						if (!isNaN(home) && !isNaN(away)) {
+							if (home > away && homeTeam) {
+								homeTeam.classList.add('text-green-600', 'dark:text-green-400', 'font-bold');
+								homeTeam.classList.remove('font-medium');
+							} else if (away > home && awayTeam) {
+								awayTeam.classList.add('text-green-600', 'dark:text-green-400', 'font-bold');
+								awayTeam.classList.remove('font-medium');
+							}
+						}
+					}
+				} else {
+					el.classList.add('opacity-0');
+					if (homeTeam) {
+						homeTeam.classList.remove('text-green-600', 'dark:text-green-400', 'font-bold');
+						homeTeam.classList.add('font-medium');
+					}
+					if (awayTeam) {
+						awayTeam.classList.remove('text-green-600', 'dark:text-green-400', 'font-bold');
+						awayTeam.classList.add('font-medium');
+					}
+				}
+			});
+		}
+
+		function toggleScores(btn) {
+			const isShowing = btn.innerText.trim() === "Show Scores";
+			btn.innerText = isShowing ? "Hide Scores" : "Show Scores";
+
+			applyScoresState(document.getElementById('results-container'), isShowing);
+			applyScoresState(document.getElementById('search-results'), isShowing);
+		}
+
+		function syncSearchSpoiler() {
+			const btn = document.querySelector('button[onclick="toggleScores(this)"]');
+			if (!btn) return;
+			const shouldShow = btn.innerText.trim() === "Hide Scores";
+			applyScoresState(document.getElementById('search-results'), shouldShow);
+		}
+	</script>
+	<style>
+		#search-results:empty {
+			display: none;
+		}
+
+		#search-results:not(:empty) {
+			display: block;
+		}
+
+		.upcoming-section {
+			height: calc(100% - 16px) !important;
+			min-height: 198px;
+		}
+
+		input[type="search"]::-webkit-search-decoration,
+		input[type="search"]::-webkit-search-cancel-button,
+		input[type="search"]::-webkit-search-results-button,
+		input[type="search"]::-webkit-search-results-decoration {
+			display: none;
+		}
+
+		.skeleton-overlay {
+			display: none;
+		}
+
+		.htmx-request .skeleton-overlay {
+			display: flex;
+		}
+
+		.w-full.overflow-x-auto {
+			scroll-behavior: smooth;
+			scrollbar-width: thin;
+			scrollbar-color: rgba(169, 169, 169, 0.3) rgba(240, 240, 240, 0.3);
+		}
+
+		.w-full.overflow-x-auto::-webkit-scrollbar {
+			height: 6px;
+		}
+
+		.w-full.overflow-x-auto::-webkit-scrollbar-thumb {
+			background: rgba(243 244 246);
+			border-radius: 10px;
+		}
+
+		.w-full.overflow-x-auto::-webkit-scrollbar-track {
+			background: rgba(240, 240, 240, 0.3);
+		}
+
+		.dark .w-full.overflow-x-auto {
+			scrollbar-width: thin;
+			scrollbar-color: rgba(100, 100, 100, 0.3) rgba(30, 30, 30, 0.3);
+		}
+
+		.dark .w-full.overflow-x-auto::-webkit-scrollbar {
+			height: 6px;
+		}
+
+		.dark .w-full.overflow-x-auto::-webkit-scrollbar-thumb {
+			background: rgba(30, 30, 30, 0.3);
+			border-radius: 10px;
+		}
+
+		.dark .w-full.overflow-x-auto::-webkit-scrollbar-track {
+			background: rgba(30, 30, 30, 0.3);
+		}
+	</style>
+</head>
+
+<body class="bg-gray-100 flex flex-col min-h-screen overflow-y-scroll overflow-x-hidden dark:bg-zinc-800">
+	<nav class="fixed top-0 left-0 w-full bg-white dark:bg-zinc-900 shadow-md z-10">
+		<div class="flex items-center justify-between p-2 px-6">
+			<div class="flex items-center gap-2 sm:gap-4" style="margin-left: -7px;">
+				<a href="#upcoming-container-section" class="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold transition-all">Upcoming</a>
+				<a href="#results-container-section" class="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold transition-all">Results</a>
+				{% if leagues %}
+				<a href="#league-standings-section" class="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold transition-all">Standings</a>
+				{% endif %}
+			</div>
+
+			<div class="flex items-center gap-4">
+				<div class="relative group hidden sm:block">
+					<div class="flex items-center bg-gray-100 dark:bg-zinc-800 rounded-full px-3 py-1.5 border border-transparent focus-within:border-emerald-500 transition-all">
+						<i class="fas fa-search text-gray-400 mr-2 text-xs"></i>
+						<input type="search" name="q" id="team-search" placeholder="Search teams..." class="bg-transparent text-sm focus:outline-none dark:text-white w-32 sm:w-64" hx-get="/search" hx-target="#search-results" hx-trigger="keyup changed delay:300ms, search" hx-on::after-swap="" autocomplete="off">
+						<button onclick="document.getElementById('team-search').value = ''; htmx.trigger('#team-search', 'search')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1">
+							<i class="fas fa-times-circle text-xs"></i>
+						</button>
+					</div>
+					<!-- Autocomplete Dropdown -->
+					<div id="search-results" class="absolute top-full right-0 w-72 sm:w-96 bg-white dark:bg-zinc-800 shadow-xl border border-gray-100 dark:border-zinc-700 rounded-none mt-4 max-h-[70vh] overflow-y-auto z-50"></div>
+				</div>
+				<div class="flex items-center sm:border-l dark:border-zinc-700 sm:pl-4">
+					<button id="dark-mode-button" class="dark:text-gray-300 hover:text-emerald-500 transition-colors text-xl" hx-post="/submit-night-mode" hx-on::before-request="toggleDarkMode(true);" hx-swap="outerHTML"><i class="fas fa-moon"></i></button>
+					<button id="light-mode-button" class="hidden dark:text-gray-300 hover:text-emerald-500 transition-colors text-xl" hx-post="/submit-blind-mode" hx-on::before-request="toggleDarkMode(false);" hx-swap="outerHTML"><i class="fas fa-sun"></i></button>
+				</div>
+			</div>
+		</div>
+	</nav>
+
+	<div class="flex flex-col xl:flex-row mt-16">
+		<!-- Upcoming -->
+		<section id="upcoming-container-section" class="w-full xl:w-1/2">
+			<div class="p-2 px-4">
+				<h1 class="text-[1.25rem] dark:text-white">Next Fixtures</h1>
+			</div>
+			<div class="flex flex-col md:flex-row">
+				<div class="w-full">
+					<div id="upcoming-container" class="bg-white border h-full m-2 mx-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white upcoming-section" hx-get="/get-upcoming" hx-trigger="load" hx-swap="innerHTML">
+						<div class="flex flex-col justify-center items-center m-auto p-4 pb-12 mb-8">
+							<div class="mt-[100px] border-2 border-t-2 border-gray-400 border-dashed rounded-full w-32 h-32 animate-bounce"></div>
+							<div class="mt-2 text-center text-gray-400">Loading Upcoming...</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Recent Results -->
+		<section id="results-container-section" class="w-full xl:w-1/2 mt-8 xl:mt-0">
+			<div class="p-2 px-4 flex items-center justify-between">
+				<h1 class="text-[1.25rem] dark:text-white">Recent Results</h1>
+				<button onclick="toggleScores(this)" class="px-3 py-1 bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">
+					Show Scores
+				</button>
+			</div>
+			<div class="flex flex-col md:flex-row">
+				<div class="w-full">
+					<div id="results-container" class="bg-white border h-full m-2 mx-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white upcoming-section" hx-get="/get-results" hx-trigger="load" hx-swap="innerHTML">
+						<div class="flex flex-col justify-center items-center m-auto p-4 pb-12 mb-8">
+							<div class="mt-[100px] border-2 border-t-2 border-gray-400 border-dashed rounded-full w-32 h-32 animate-bounce"></div>
+							<div class="mt-2 text-center text-gray-400">Loading Results...</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	{% if leagues %}
+	<section id="league-standings-section">
+		<div class="p-2 pt-4 px-4">
+			<h1 class="text-[1.25rem] dark:text-white">Football Standings</h1>
+		</div>
+		<div class="w-full overflow-x-auto p-2 px-4">
+			<div class="flex space-x-6 mb-4 min-w-max">
+				{% for league, standings in leagues.items() %}
+				<div class="bg-white border col-span-1 p-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white">
+					<h2 class="mb-2">{{ league }}</h2>
+
+					<table class="border-collapse border border-gray-200 table-auto rounded-md text-xs w-[450px]">
+						<tr class="border-l-4 bg-gray-200 dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white">
+							<th class="border-b border-b-gray-200 p-2">&nbsp;</th>
+							<th class="border-b border-b-gray-200 p-2 text-left">Team</th>
+							<th class="border-b border-b-gray-200 p-2 text-center">GP</th>
+							<th class="border-b border-b-gray-200 p-2 text-center">W</th>
+							<th class="border-b border-b-gray-200 p-2 text-center">D</th>
+							<th class="border-b border-b-gray-200 p-2 text-center">L</th>
+							<th class="border-b border-b-gray-200 p-2 text-center">GD</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">Points</th>
+						</tr>
+						{% for row in standings %}
+						<tr class="border-b border-b-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-200 dark:hover:text-black dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white border-l-4 {% if row.zone == 'ucl' %}border-l-blue-600 dark:border-l-blue-500{% elif row.zone == 'ucl-q' %}border-l-blue-400 dark:border-l-blue-400{% elif row.zone == 'uel' %}border-l-orange-500 dark:border-l-orange-500{% elif row.zone == 'uecl' %}border-l-green-500 dark:border-l-green-500{% elif row.zone == 'rel' %}border-l-red-600 dark:border-l-red-500{% elif row.zone == 'rel-po' %}border-l-red-400 dark:border-l-red-400{% else %}border-l-1 border-l-gray-200 dark:border-l-gray-200{% endif %}">
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ loop.index }}.</td>
+							<td class="border-b border-b-gray-200 p-2 text-left">{{ row.team }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.games_played }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.wins }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.draws }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.losses }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.goal_difference }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.points }}</td>
+						</tr>
+						{% endfor %}
+					</table>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</section>
+	{% endif %}
+
+	<button id="backToTop" hx-on:click="backToTopClick()" class="fixed bottom-4 right-4 bg-gray-500 text-white p-3 rounded-full shadow-md hover:bg-gray-600 transition-all opacity-0 pointer-events-none transition-opacity duration-300">
+		↑
+	</button>
+</body>
+
+</html>

@@ -14,22 +14,33 @@ def convert_time(time_str):
         return time_str
     
     try:
-        # Guardian times are typically "HH:MM" or "HH:MM TZ" (e.g., "19:30 BST")
-        parts = time_str.split()
+        # Normalize: replace "." with ":" (Guardian sometimes uses 15.00)
+        clean_time = time_str.replace(".", ":").strip()
+        parts = clean_time.split()
         time_part = parts[0]
-        tz_part = " ".join(parts[1:])
         
-        # Parse the 24h time
-        dt = datetime.strptime(time_part, "%H:%M")
+        # Try parsing as 24h time first (most common for scrapers)
+        try:
+            dt = datetime.strptime(time_part, "%H:%M")
+        except ValueError:
+            # Fallback for 12h time if it appears
+            dt = datetime.strptime(time_part, "%I:%M")
+        
         # Apply the hourly offset
         dt = dt + timedelta(hours=offset)
         
         # Format to 12h clock
         formatted_time = dt.strftime("%I:%M %p").lstrip("0")
         
+        # Keep any trailing timezone info if it exists
+        tz_part = " ".join(parts[1:])
+        
+        # Include original source to help user debug the offset
+        result = f"{formatted_time}"
         if tz_part:
-            return f"{formatted_time} {tz_part}"
-        return formatted_time
+            result += f" {tz_part}"
+        
+        return f"{result} ({time_str})"
     except Exception:
         return time_str
 

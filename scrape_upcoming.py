@@ -1,17 +1,37 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 import pytz
 
-def convert_time(gmt_time_str):    
-    local_tz = pytz.timezone("America/Phoenix")
+def convert_time(time_str):    
+    try:
+        offset = int(os.environ.get("TIMEZONE_OFFSET", 0))
+    except (ValueError, TypeError):
+        offset = 0
+
+    if offset == 0:
+        return time_str
     
-    gmt_tz = pytz.timezone("GMT")
-    gmt_time = datetime.strptime(gmt_time_str.replace(u'\xa0', u' '), "%H:%M %Z")
-    gmt_time = gmt_tz.localize(gmt_time)
-    local_time = gmt_time.astimezone(local_tz)
-    
-    return local_time.strftime("%I:%M %p")
+    try:
+        # Guardian times are typically "HH:MM" or "HH:MM TZ" (e.g., "19:30 BST")
+        parts = time_str.split()
+        time_part = parts[0]
+        tz_part = " ".join(parts[1:])
+        
+        # Parse the 24h time
+        dt = datetime.strptime(time_part, "%H:%M")
+        # Apply the hourly offset
+        dt = dt + timedelta(hours=offset)
+        
+        # Format to 12h clock
+        formatted_time = dt.strftime("%I:%M %p").lstrip("0")
+        
+        if tz_part:
+            return f"{formatted_time} {tz_part}"
+        return formatted_time
+    except Exception:
+        return time_str
 
 def scrape_upcoming():    
     url = "https://www.theguardian.com/football/fixtures"
@@ -55,7 +75,8 @@ def scrape_upcoming():
                         team_names = [span.text.strip() for span in teams_td.find_all("span")]
                         
                         if len(team_names) == 2:
-                            matches.append({"time": match_time, "home_team": team_names[0], "away_team": team_names[1]})
+                            final_time = convert_time(match_time)
+                            matches.append({"time": final_time, "home_team": team_names[0], "away_team": team_names[1]})
        
             events[-1]["match_values"].append({ "matches":  matches })
 
@@ -91,19 +112,27 @@ def scrape_upcoming_alt():
             matches = []        
             
             anchor = div.find_previous_sibling("h3")
-            anchor_link = anchor.find("a")
+            anchor_link = anchor.find("a") if anchor else None
             
-            anchor_text = anchor_link.text.strip() if anchor else ""
+            anchor_text = anchor_link.text.strip() if anchor_link else ""
             
             events[-1]["match_values"].append({ "title": anchor_text })   
             
             for table in div.find_all("a"):
-                match_time = table.find("time").text.strip()
-                home_team = table.find("span", class_="dcr-iqim6o").text.strip()
-                away_team = table.find("div", class_="dcr-rm7qtf").text.strip()
+                match_time_tag = table.find("time")
+                if not match_time_tag:
+                    continue
+                match_time = match_time_tag.text.strip()
+                
+                home_team_tag = table.find("span", class_="dcr-iqim6o")
+                away_team_tag = table.find("div", class_="dcr-rm7qtf")
+                
+                home_team = home_team_tag.text.strip() if home_team_tag else "Unknown"
+                away_team = away_team_tag.text.strip() if away_team_tag else "Unknown"
 
-                matches.append({"time": match_time, "home_team": home_team, "away_team": away_team})
+                final_time = convert_time(match_time)
+                matches.append({"time": final_time, "home_team": home_team, "away_team": away_team})
        
             events[-1]["match_values"].append({ "matches":  matches })       
     
-    return events
+    return events

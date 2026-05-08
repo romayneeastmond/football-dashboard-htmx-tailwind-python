@@ -4,6 +4,12 @@ from scrape_upcoming import scrape_upcoming
 from scrape_cpl import scrape_cpl
 from scrape_results import scrape_results
 from flask import Flask, render_template, request, jsonify
+import os
+
+try:
+    __import__('dotenv').load_dotenv()
+except ImportError:
+    pass
 
 app = Flask(__name__)
 

@@ -14,6 +14,7 @@ def convert_time(time_str):
         return time_str
     
     try:
+        # Normalize: replace "." with ":"
         clean_time = time_str.replace(".", ":").strip()
         parts = clean_time.split()
         time_part = parts[0]
@@ -23,18 +24,16 @@ def convert_time(time_str):
         except ValueError:
             dt = datetime.strptime(time_part, "%I:%M")
         
-        dt = dt + timedelta(hours=offset)
+        # Apply the hourly offset
+        new_dt = dt + timedelta(hours=offset)
         
-        formatted_time = dt.strftime("%I:%M %p").lstrip("0")
+        # Format to 12h clock
+        formatted_time = new_dt.strftime("%I:%M %p").lstrip("0")
         
-        #tz_part = " ".join(parts[1:])
-        
-        result = f"{formatted_time}"
-        #if tz_part:
-        #    result += f" {tz_part}"
-        
-        return result
-    except Exception:
+        # Return ONLY the formatted time (no BST/EDT labels)
+        return formatted_time
+    except Exception as e:
+        print(f"DEBUG TIME ERROR: {e}")
         return time_str
 
 def scrape_upcoming():    

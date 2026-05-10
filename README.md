@@ -7,6 +7,14 @@ A modern, responsive football dashboard built with **Flask**, **HTMX**, and **Ta
 ![HTMX](https://img.shields.io/badge/HTMX-1.9-3D55EE?style=for-the-badge&logo=htmx&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
+---
+
+## 🌎 Live Demo
+
+Live demo hosted on Vercel [Football Homepage](https://football-dashboard-htmx-tailwind-py.vercel.app/).
+
+---
+
 ## 🚀 Features
 
 - **Live Standings**: Real-time position tables for major European leagues (Premier League, La Liga, Serie A, Bundesliga, Ligue 1) and the CPL.

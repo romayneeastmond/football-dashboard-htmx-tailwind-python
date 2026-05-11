@@ -315,12 +315,19 @@
 						{% for row in standings %}
 						<tr class="border-b border-b-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-200 dark:hover:text-black dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white border-l-4 {% if row.zone == 'ucl' %}border-l-blue-600 dark:border-l-blue-500{% elif row.zone == 'ucl-q' %}border-l-blue-400 dark:border-l-blue-400{% elif row.zone == 'uel' %}border-l-orange-500 dark:border-l-orange-500{% elif row.zone == 'uecl' %}border-l-green-500 dark:border-l-green-500{% elif row.zone == 'rel' %}border-l-red-600 dark:border-l-red-500{% elif row.zone == 'rel-po' %}border-l-red-400 dark:border-l-red-400{% else %}border-l-1 border-l-gray-200 dark:border-l-gray-200{% endif %}">
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ loop.index }}.</td>
-							<td class="border-b border-b-gray-200 p-2 text-left">{{ row.team }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-left">
+								<div class="flex items-center gap-2">
+									{% if row.logo %}
+									<img src="{{ row.logo }}" alt="{{ row.team }}" class="w-4 h-4 object-contain">
+									{% endif %}
+									<span>{{ row.team }}</span>
+								</div>
+							</td>
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.games_played }}</td>
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.wins }}</td>
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.draws }}</td>
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.losses }}</td>
-							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.goal_difference }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right {% if row.goal_difference|int > 0 %}text-green-600 dark:text-green-400{% elif row.goal_difference|int < 0 %}text-red-600 dark:text-red-400{% endif %}">{{ row.goal_difference }}</td>
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.points }}</td>
 						</tr>
 						{% endfor %}

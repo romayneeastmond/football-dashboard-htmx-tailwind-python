@@ -44,6 +44,8 @@ def scrape_standings(url, league_name=None):
             losses = stats.get("losses", "0")
             goal_difference = stats.get("pointDifferential", "0")
 
+            team_logo = team_data.get("logos", [{}])[0].get("href", "")
+
             zone = ""
             if league_name and league_name in QUALIFICATION_ZONES:
                 mapping = QUALIFICATION_ZONES[league_name]
@@ -56,6 +58,7 @@ def scrape_standings(url, league_name=None):
 
             standings.append({
                 "team": team_name, 
+                "logo": team_logo,
                 "points": points, 
                 "games_played": games_played,
                 "wins": wins,
@@ -69,4 +72,4 @@ def scrape_standings(url, league_name=None):
         print(f"Error parsing API response for {league_code}: {e}")
         return []
 
-    return standings
+    return standings

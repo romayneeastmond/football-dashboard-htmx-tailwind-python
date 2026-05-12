@@ -8,9 +8,8 @@
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon" sizes="48x48" />
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon" />
 	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.3.1/styles/default.min.css" rel="stylesheet" />
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.3.1/styles/default.min.css" rel="stylesheet" />
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 	<script src="https://cdn.tailwindcss.com"></script>
 	<script src="https://unpkg.com/htmx.org"></script>
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -138,7 +137,7 @@
 		}
 
 		function toggleScores(btn) {
-			const isShowing = btn.innerText.trim() === "Show Scores";
+			const isShowing = btn.innerText.trim().toLowerCase() === "show scores";
 			btn.innerText = isShowing ? "Hide Scores" : "Show Scores";
 
 			applyScoresState(document.getElementById('results-container'), isShowing);
@@ -153,6 +152,84 @@
 		}
 	</script>
 	<style>
+		:root {
+			--accent: #10b981;
+			--accent-dark: #059669;
+			--font-body: 'Barlow', sans-serif;
+			--font-display: 'Barlow Condensed', sans-serif;
+		}
+
+		body {
+			font-family: var(--font-body);
+		}
+
+		h1, h2, h3, h4, h5, .nav-link {
+			font-family: var(--font-display);
+			letter-spacing: 0.02em;
+		}
+
+		/* Nav top accent */
+		nav {
+			border-top: 3px solid var(--accent);
+		}
+
+		/* Section headings */
+		.section-heading {
+			font-family: var(--font-display);
+			font-size: 1.1rem;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+		}
+
+		/* Cards */
+		.card {
+			border-radius: 2px;
+			border: 1px solid #e5e7eb;
+			transition: box-shadow 0.15s ease;
+		}
+		.dark .card {
+			border-color: #3f3f46;
+		}
+
+		/* Match row */
+		.match-row {
+			border-radius: 1px;
+			transition: background 0.12s ease;
+		}
+
+		/* Standings table */
+		.standings-table th {
+			font-family: var(--font-display);
+			font-size: 10px;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			font-weight: 700;
+		}
+
+		/* Show scores button */
+		.scores-btn {
+			font-family: var(--font-display);
+			letter-spacing: 0.08em;
+			font-size: 11px;
+			font-weight: 700;
+			padding: 5px 14px;
+			border-radius: 2px;
+		}
+
+		/* Back to top */
+		#backToTop {
+			font-family: var(--font-display);
+			font-size: 1rem;
+			font-weight: 700;
+			border-radius: 2px;
+			width: 36px;
+			height: 36px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
 		#search-results:empty {
 			display: none;
 		}
@@ -224,10 +301,10 @@
 	<nav class="fixed top-0 left-0 w-full bg-white dark:bg-zinc-900 shadow-md z-10">
 		<div class="flex items-center justify-between p-2 px-6">
 			<div class="flex items-center gap-2 sm:gap-4" style="margin-left: -7px;">
-				<a href="#upcoming-container-section" class="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold transition-all">Upcoming</a>
-				<a href="#results-container-section" class="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold transition-all">Results</a>
+				<a href="#upcoming-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Upcoming</a>
+				<a href="#results-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Results</a>
 				{% if leagues %}
-				<a href="#league-standings-section" class="text-gray-700 dark:text-gray-300 hover:text-emerald-500 font-bold transition-all">Standings</a>
+				<a href="#league-standings-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Standings</a>
 				{% endif %}
 			</div>
 
@@ -255,7 +332,7 @@
 		<!-- Upcoming -->
 		<section id="upcoming-container-section" class="w-full xl:w-1/2">
 			<div class="p-2 px-4">
-				<h1 class="text-[1.25rem] dark:text-white">Next Fixtures</h1>
+				<h1 class="section-heading text-gray-800 dark:text-white">Next Fixtures</h1>
 			</div>
 			<div class="flex flex-col md:flex-row">
 				<div class="w-full">
@@ -272,10 +349,8 @@
 		<!-- Recent Results -->
 		<section id="results-container-section" class="w-full xl:w-1/2 mt-8 xl:mt-0">
 			<div class="p-2 px-4 flex items-center justify-between">
-				<h1 class="text-[1.25rem] dark:text-white">Recent Results</h1>
-				<button onclick="toggleScores(this)" class="px-3 py-1 bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">
-					Show Scores
-				</button>
+				<h1 class="section-heading text-gray-800 dark:text-white">Recent Results</h1>
+				<button onclick="toggleScores(this)" class="scores-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Show Scores</button>
 			</div>
 			<div class="flex flex-col md:flex-row">
 				<div class="w-full">
@@ -293,15 +368,15 @@
 	{% if leagues %}
 	<section id="league-standings-section">
 		<div class="p-2 pt-4 px-4">
-			<h1 class="text-[1.25rem] dark:text-white">Football Standings</h1>
+			<h1 class="section-heading text-gray-800 dark:text-white">Football Standings</h1>
 		</div>
 		<div class="w-full overflow-x-auto p-2 px-4">
 			<div class="flex space-x-6 mb-4 min-w-max">
 				{% for league, standings in leagues.items() %}
-				<div class="bg-white border col-span-1 p-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white">
-					<h2 class="mb-2">{{ league }}</h2>
+				<div class="bg-white border col-span-1 p-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white" style="border-radius:2px">
+					<h2 class="section-heading text-gray-800 dark:text-white mb-3 text-base">{{ league }}</h2>
 
-					<table class="border-collapse border border-gray-200 table-auto rounded-md text-xs w-[450px]">
+					<table class="standings-table border-collapse border border-gray-200 table-auto text-xs w-[450px]">
 						<tr class="border-l-4 bg-gray-200 dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white">
 							<th class="border-b border-b-gray-200 p-2">&nbsp;</th>
 							<th class="border-b border-b-gray-200 p-2 text-left">Team</th>

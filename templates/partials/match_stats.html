@@ -1,0 +1,118 @@
+{% if error %}
+<div class="flex flex-col items-center justify-center gap-3 p-8 text-center h-48">
+	<i class="fas fa-exclamation-circle text-2xl text-gray-300 dark:text-zinc-600"></i>
+	<p class="text-sm text-gray-500 dark:text-gray-400">{{ error }}</p>
+	<button onclick="closeStatsDrawer()" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline mt-1">Close</button>
+</div>
+{% else %}
+
+<!-- Sticky header -->
+<div class="sticky top-0 bg-white dark:bg-zinc-900 z-10 border-b border-gray-100 dark:border-zinc-700">
+	<div class="flex items-center justify-between px-4 pt-3 pb-1">
+		<button onclick="closeStatsDrawer()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+			<i class="fas fa-times text-sm"></i>
+		</button>
+		<span class="text-[10px] uppercase tracking-widest text-gray-400 font-bold" style="font-family:'Barlow Condensed',sans-serif">
+			{{ league }}{% if round %} &bull; {{ round }}{% endif %}
+		</span>
+		<div class="w-8"></div>
+	</div>
+
+	<!-- Teams & Score -->
+	<div class="flex items-center justify-between px-6 py-4 gap-2">
+		<div class="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+			{% if home_logo %}<img src="{{ home_logo }}" alt="{{ home_name }}" class="w-12 h-12 object-contain mb-1">{% endif %}
+			<span class="text-xs font-bold text-center leading-tight text-gray-800 dark:text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.03em">{{ home_name }}</span>
+		</div>
+
+		<div class="flex flex-col items-center flex-shrink-0 mx-2">
+			<div class="text-4xl font-bold text-gray-900 dark:text-white tabular-nums" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.05em">
+				{% if home_score is not none %}{{ home_score }}{% else %}–{% endif %}
+				&ndash;
+				{% if away_score is not none %}{{ away_score }}{% else %}–{% endif %}
+			</div>
+			<div class="text-[10px] text-gray-400 uppercase tracking-wider mt-1" style="font-family:'Barlow Condensed',sans-serif">Full Time</div>
+		</div>
+
+		<div class="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+			{% if away_logo %}<img src="{{ away_logo }}" alt="{{ away_name }}" class="w-12 h-12 object-contain mb-1">{% endif %}
+			<span class="text-xs font-bold text-center leading-tight text-gray-800 dark:text-white" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.03em">{{ away_name }}</span>
+		</div>
+	</div>
+
+	<div class="text-center text-[10px] text-gray-400 dark:text-gray-500 pb-3 tracking-wider" style="font-family:'Barlow Condensed',sans-serif">
+		{{ date_iso }}
+	</div>
+</div>
+
+<!-- Match Events -->
+{% if events %}
+<div class="px-4 pt-4 pb-4 border-b border-gray-100 dark:border-zinc-700">
+	<h3 class="text-[10px] uppercase tracking-widest font-bold text-gray-400 dark:text-gray-500 mb-3" style="font-family:'Barlow Condensed',sans-serif">Match Events</h3>
+	<div class="space-y-2.5">
+		{% for ev in events %}
+		{% set is_home = ev.side == 'home' %}
+		<div class="flex items-center gap-2 {% if is_home %}flex-row{% else %}flex-row-reverse{% endif %}">
+			<span class="text-[11px] font-bold text-gray-400 w-8 tabular-nums {% if is_home %}text-left{% else %}text-right{% endif %}" style="font-family:'Barlow Condensed',sans-serif">
+				{{ ev.minute }}{% if ev.extra %}+{{ ev.extra }}{% endif %}'
+			</span>
+			<span class="text-base leading-none">
+				{% if ev.type == 'Goal' %}
+					{% if ev.detail == 'Own Goal' %}⚽
+					{% elif ev.detail == 'Penalty' %}⚽
+					{% else %}⚽{% endif %}
+				{% elif ev.detail == 'Red Card' %}🟥
+				{% elif ev.detail == 'Yellow Red Card' %}🟨🟥
+				{% else %}🟨{% endif %}
+			</span>
+			<div class="flex flex-col {% if is_home %}items-start{% else %}items-end{% endif %} min-w-0">
+				<span class="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{{ ev.player }}</span>
+				<div class="flex items-center gap-1 text-[10px] text-gray-400" style="font-family:'Barlow Condensed',sans-serif">
+					{% if ev.detail == 'Own Goal' %}<span>(OG)</span>{% endif %}
+					{% if ev.detail == 'Penalty' and ev.type == 'Goal' %}<span>(pen)</span>{% endif %}
+					{% if ev.assist %}<span>↳ {{ ev.assist }}</span>{% endif %}
+				</div>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</div>
+{% endif %}
+
+<!-- Statistics -->
+{% if stats %}
+<div class="px-4 pt-4 pb-6">
+	<h3 class="text-[10px] uppercase tracking-widest font-bold text-gray-400 dark:text-gray-500 mb-4" style="font-family:'Barlow Condensed',sans-serif">Match Statistics</h3>
+	<div class="space-y-4">
+		{% for stat in stats %}
+		<div>
+			<div class="flex justify-between items-baseline mb-1.5">
+				<span class="text-xs font-bold text-gray-800 dark:text-gray-200 tabular-nums">{{ stat.home }}</span>
+				<span class="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 px-2" style="font-family:'Barlow Condensed',sans-serif">{{ stat.label }}</span>
+				<span class="text-xs font-bold text-gray-800 dark:text-gray-200 tabular-nums">{{ stat.away }}</span>
+			</div>
+			<div class="flex h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700">
+				<div class="bg-emerald-500 h-full" style="width:{{ stat.home_pct }}%;transition:width 0.6s ease"></div>
+				<div class="bg-gray-300 dark:bg-zinc-500 h-full" style="width:{{ stat.away_pct }}%;transition:width 0.6s ease"></div>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+
+	<!-- Legend -->
+	<div class="flex items-center gap-4 mt-5 text-[10px] text-gray-400" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em">
+		<div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span>{{ home_name }}</div>
+		<div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-gray-300 dark:bg-zinc-500 inline-block"></span>{{ away_name }}</div>
+	</div>
+</div>
+{% endif %}
+
+{% if not events and not stats %}
+<div class="flex flex-col items-center justify-center gap-3 p-8 text-center h-48">
+	<span class="text-3xl">⏱️</span>
+	<p class="text-sm font-semibold text-gray-700 dark:text-gray-300" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.03em">Stats are still warming up</p>
+	<p class="text-xs text-gray-400 dark:text-gray-500 max-w-[220px]">ESPN hasn't published the match statistics yet. Check back in a few minutes.</p>
+</div>
+{% endif %}
+
+{% endif %}

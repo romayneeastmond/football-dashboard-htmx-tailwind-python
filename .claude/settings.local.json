@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "mcp__plugin_context-mode_context-mode__ctx_batch_execute"
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_fetch_and_index",
+      "Bash(Remove-Item -ErrorAction SilentlyContinue \"C:\\\\Program Files \\(x86\\)\\\\Apache Software Foundation\\\\Apache2.2\\\\htdocs\\\\Python\\\\htmx-scores\\\\team_logos_cache.json\")",
+      "Bash(Remove-Item -ErrorAction SilentlyContinue \"C:\\\\Program Files \\(x86\\)\\\\Apache Software Foundation\\\\Apache2.2\\\\htdocs\\\\Python\\\\htmx-scores\\\\match_stats_cache.json\")"
     ]
   }
 }

@@ -145,10 +145,10 @@
 						if (!isNaN(home) && !isNaN(away)) {
 							if (home > away && homeTeam) {
 								homeTeam.classList.add('text-green-600', 'dark:text-green-400', 'font-bold');
-								homeTeam.classList.remove('font-medium');
+								homeTeam.classList.remove('font-medium', 'dark:text-white');
 							} else if (away > home && awayTeam) {
 								awayTeam.classList.add('text-green-600', 'dark:text-green-400', 'font-bold');
-								awayTeam.classList.remove('font-medium');
+								awayTeam.classList.remove('font-medium', 'dark:text-white');
 							}
 						}
 					}
@@ -158,11 +158,11 @@
 					el.classList.add('opacity-0');
 					if (homeTeam) {
 						homeTeam.classList.remove('text-green-600', 'dark:text-green-400', 'font-bold');
-						homeTeam.classList.add('font-medium');
+						homeTeam.classList.add('font-medium', 'dark:text-white');
 					}
 					if (awayTeam) {
 						awayTeam.classList.remove('text-green-600', 'dark:text-green-400', 'font-bold');
-						awayTeam.classList.add('font-medium');
+						awayTeam.classList.add('font-medium', 'dark:text-white');
 					}
 				}
 			});
@@ -190,6 +190,47 @@
 				document.getElementById('mobile-team-search').focus();
 			}
 		}
+
+		function openStatsDrawer() {
+			document.getElementById('stats-drawer-content').innerHTML = `
+				<div class="flex flex-col items-center justify-center gap-3 h-64 text-gray-400">
+					<div class="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+					<span class="text-[10px] uppercase tracking-widest" style="font-family:'Barlow Condensed',sans-serif">Loading stats&hellip;</span>
+				</div>`;
+			const backdrop = document.getElementById('stats-backdrop');
+			const drawer   = document.getElementById('stats-drawer');
+			backdrop.classList.remove('hidden');
+			requestAnimationFrame(() => {
+				backdrop.classList.remove('opacity-0');
+				drawer.classList.remove('translate-x-full');
+			});
+		}
+
+		function closeStatsDrawer() {
+			const backdrop = document.getElementById('stats-backdrop');
+			const drawer   = document.getElementById('stats-drawer');
+			backdrop.classList.add('opacity-0');
+			drawer.classList.add('translate-x-full');
+			setTimeout(() => backdrop.classList.add('hidden'), 300);
+		}
+
+		document.addEventListener('keydown', e => {
+			if (e.key === 'Escape') closeStatsDrawer();
+		});
+
+		document.addEventListener('click', e => {
+			const searchWrap = document.querySelector('.relative.hidden.sm\\:block');
+			if (searchWrap && !searchWrap.contains(e.target)) {
+				const results = document.getElementById('search-results');
+				if (results) results.innerHTML = '';
+			}
+			const mobileBar = document.getElementById('mobile-search-bar');
+			if (mobileBar && !mobileBar.contains(e.target) &&
+				!document.getElementById('mobile-search-toggle').contains(e.target)) {
+				const mobileResults = document.getElementById('mobile-search-results');
+				if (mobileResults) mobileResults.innerHTML = '';
+			}
+		});
 	</script>
 	<style>
 		:root {
@@ -400,7 +441,7 @@
 							<i class="fas fa-times-circle text-xs"></i>
 						</button>
 					</div>
-					<div id="search-results" class="absolute top-full right-0 w-72 sm:w-96 bg-white dark:bg-zinc-800 shadow-xl border border-gray-100 dark:border-zinc-700 mt-4 max-h-[70vh] overflow-y-auto z-50"></div>
+					<div id="search-results" class="absolute top-full right-0 w-72 sm:w-96 bg-white dark:bg-zinc-800 shadow-xl border border-gray-100 dark:border-zinc-700 mt-4 max-h-[70vh] overflow-y-auto z-50 rounded-lg"></div>
 				</div>
 
 				<!-- Mobile search toggle -->
@@ -568,6 +609,14 @@
 	<button id="backToTop" hx-on:click="backToTopClick()" class="fixed bottom-4 right-4 bg-gray-500 text-white shadow-md hover:bg-emerald-600 transition-all opacity-0 pointer-events-none transition-opacity duration-300">
 		↑
 	</button>
+
+	<!-- Stats drawer backdrop -->
+	<div id="stats-backdrop" onclick="closeStatsDrawer()" class="fixed inset-0 bg-black/40 z-20 hidden opacity-0 transition-opacity duration-300"></div>
+
+	<!-- Stats drawer panel -->
+	<div id="stats-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-white dark:bg-zinc-900 shadow-2xl z-30 translate-x-full transition-transform duration-300 ease-out overflow-y-auto">
+		<div id="stats-drawer-content"></div>
+	</div>
 </body>
 
 </html>

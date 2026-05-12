@@ -1,6 +1,7 @@
 <div class="relative w-full h-full min-h-[300px] results-wrapper flex flex-col w-full">
 	{% if events %}
 	{% for event in events %}
+	{% set current_date = event.date %}
 	<div class="p-4 w-full">
 		<h4 class="font-bold text-base mb-4 border-b border-gray-200 dark:border-zinc-700 pb-2" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.05em;text-transform:uppercase">{{ event.date }}</h4>
 
@@ -10,13 +11,28 @@
 
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
 				{% for match in value.matches %}
-				<div class="match-row grid grid-cols-[0.5fr_minmax(0,1fr)_0.5fr_minmax(0,1fr)] items-center bg-white border shadow-sm p-3 text-gray-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white">
+				{% set home_logo = find_logo(logos, match.home_team) %}
+				{% set away_logo = find_logo(logos, match.away_team) %}
+				<div class="match-row grid grid-cols-[0.5fr_minmax(0,1fr)_0.5fr_minmax(0,1fr)] items-center bg-white border shadow-sm p-3 text-gray-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white cursor-pointer select-none"
+					hx-get="/match-stats"
+					hx-vals='{"home": {{ match.home_team | tojson }}, "away": {{ match.away_team | tojson }}, "date": {{ current_date | tojson }}, "score": {{ match.time | tojson }}}'
+					hx-target="#stats-drawer-content"
+					hx-swap="innerHTML"
+					hx-on::before-request="openStatsDrawer()">
 					<div class="text-center text-xs font-bold text-green-600 dark:text-green-400" style="font-family:'Barlow Condensed',sans-serif">
-						<span class="actual-score opacity-0 transition-opacity duration-300">{{ match.time }}</span>
+						<span class="actual-score opacity-0">{{ match.time }}</span>
 					</div>
-					<div class="text-right text-xs font-medium truncate team-home" title="{{ match.home_team }}">{{ match.home_team }}</div>
+					<div class="flex items-center justify-end gap-1.5 min-w-0">
+						<span class="text-xs font-medium truncate team-home" title="{{ match.home_team }}">{{ match.home_team }}</span>
+						{% if home_logo %}<img src="{{ home_logo }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">
+						{% else %}<span class="w-4 h-4 flex-shrink-0 rounded-full bg-gray-200 dark:bg-zinc-600 flex items-center justify-center text-[8px] font-bold text-gray-500 dark:text-gray-400">{{ match.home_team[0] }}</span>{% endif %}
+					</div>
 					<div class="text-center text-[10px] text-gray-400 font-bold tracking-widest" style="font-family:'Barlow Condensed',sans-serif">VS</div>
-					<div class="text-left text-xs font-medium truncate team-away" title="{{ match.away_team }}">{{ match.away_team }}</div>
+					<div class="flex items-center justify-start gap-1.5 min-w-0">
+						{% if away_logo %}<img src="{{ away_logo }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">
+						{% else %}<span class="w-4 h-4 flex-shrink-0 rounded-full bg-gray-200 dark:bg-zinc-600 flex items-center justify-center text-[8px] font-bold text-gray-500 dark:text-gray-400">{{ match.away_team[0] }}</span>{% endif %}
+						<span class="text-xs font-medium truncate team-away" title="{{ match.away_team }}">{{ match.away_team }}</span>
+					</div>
 				</div>
 				{% endfor %}
 			</div>

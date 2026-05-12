@@ -3,6 +3,7 @@ from scrape_standings import scrape_standings
 from scrape_upcoming import scrape_upcoming
 from scrape_cpl import scrape_cpl
 from scrape_results import scrape_results
+from scrape_espn import get_match_stats, get_team_logos, find_logo
 from flask import Flask, render_template, request, jsonify
 import os
 
@@ -12,6 +13,7 @@ except ImportError:
     pass
 
 app = Flask(__name__)
+app.jinja_env.globals["find_logo"] = find_logo
 
 @app.route("/debug-scrape")
 def debug_scrape():
@@ -77,12 +79,23 @@ def submit_night_mode():
 @app.route("/get-upcoming")
 def get_upcoming():
     events = scrape_upcoming()
-    return render_template("partials/events.html", events=events)
+    logos  = get_team_logos()
+    return render_template("partials/events.html", events=events, logos=logos)
+
+@app.route("/match-stats")
+def match_stats():
+    home  = request.args.get("home",  "").strip()
+    away  = request.args.get("away",  "").strip()
+    date  = request.args.get("date",  "").strip()
+    score = request.args.get("score", "").strip()
+    data  = get_match_stats(home, away, date, score)
+    return render_template("partials/match_stats.html", **data)
 
 @app.route("/get-results")
 def get_results():
     events = scrape_results()
-    return render_template("partials/results.html", events=events)
+    logos  = get_team_logos()
+    return render_template("partials/results.html", events=events, logos=logos)
 
 @app.route("/search")
 def search():
@@ -96,10 +109,11 @@ def search():
     filtered_upcoming = filter_events(upcoming_data, search_term)
     filtered_results = filter_events(results_data, search_term)
     
-    return render_template("partials/search_results.html", 
-                           upcoming=filtered_upcoming, 
+    return render_template("partials/search_results.html",
+                           upcoming=filtered_upcoming,
                            results=filtered_results,
-                           query=search_term)
+                           query=search_term,
+                           logos=get_team_logos())
 
 @app.route("/")
 def index():

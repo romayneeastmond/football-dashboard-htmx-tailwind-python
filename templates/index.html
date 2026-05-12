@@ -7,13 +7,12 @@
 	<title>Football Homepage</title>
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon" sizes="48x48" />
 	<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon" />
-	<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+	<!-- Tailwind v3 only (removed duplicate v2 CDN link) -->
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 	<script src="https://cdn.tailwindcss.com"></script>
 	<script src="https://unpkg.com/htmx.org"></script>
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.3.1/highlight.min.js"></script>
 	<script>
 		tailwind.config = {
 			darkMode: "selector"
@@ -25,7 +24,6 @@
 			} else {
 				$("html").removeClass("dark");
 			}
-
 			localStorage.setItem("htmx-scores-darkMode", enabled);
 		}
 
@@ -58,10 +56,32 @@
 		$(document).ready(function () {
 			if (localStorage.getItem("htmx-scores-darkMode") === "true") {
 				$("html").addClass("dark");
-
 				$("#dark-mode-button").addClass("hidden");
 				$("#light-mode-button").removeClass("hidden");
 			}
+
+			// Nav active state via Intersection Observer
+			const sectionIds = ['upcoming-container-section', 'results-container-section', 'league-standings-section'];
+			const observer = new IntersectionObserver((entries) => {
+				entries.forEach(entry => {
+					if (entry.isIntersecting) {
+						document.querySelectorAll('.nav-link').forEach(l => {
+							l.classList.remove('text-emerald-500', 'dark:text-emerald-400');
+							l.classList.add('text-gray-600', 'dark:text-gray-300');
+						});
+						const active = document.querySelector(`.nav-link[data-section="${entry.target.id}"]`);
+						if (active) {
+							active.classList.add('text-emerald-500', 'dark:text-emerald-400');
+							active.classList.remove('text-gray-600', 'dark:text-gray-300');
+						}
+					}
+				});
+			}, { threshold: 0.25, rootMargin: '-60px 0px 0px 0px' });
+
+			sectionIds.forEach(id => {
+				const el = document.getElementById(id);
+				if (el) observer.observe(el);
+			});
 		});
 
 		const formatTimesToLocal = () => {
@@ -87,11 +107,12 @@
 		};
 
 		$(document).on('htmx:afterSwap', function (event) {
-			if (event.target.id === "upcoming-container" || event.target.id === "search-results") {
+			const id = event.target.id;
+			if (id === "upcoming-container" || id === "search-results" || id === "mobile-search-results") {
 				formatTimesToLocal();
 			}
-			if (event.target.id === "search-results") {
-				syncSearchSpoiler();
+			if (id === "search-results" || id === "mobile-search-results") {
+				syncSearchSpoiler(id);
 			}
 		});
 
@@ -99,14 +120,23 @@
 			if (!wrapper) return;
 			const actualScores = wrapper.querySelectorAll('.actual-score');
 
-			actualScores.forEach(el => {
+			actualScores.forEach((el, index) => {
 				const grid = el.closest('.grid');
 				if (!grid) return;
 				const homeTeam = grid.querySelector('.team-home');
 				const awayTeam = grid.querySelector('.team-away');
 
 				if (show) {
+					// Staggered reveal animation
+					el.style.transitionDelay = `${index * 35}ms`;
+					el.style.transform = 'scale(0.7)';
 					el.classList.remove('opacity-0');
+					requestAnimationFrame(() => {
+						requestAnimationFrame(() => {
+							el.style.transform = 'scale(1)';
+						});
+					});
+
 					let scoreText = el.innerText;
 					let parts = scoreText.split('-');
 					if (parts.length === 2) {
@@ -123,6 +153,8 @@
 						}
 					}
 				} else {
+					el.style.transitionDelay = '';
+					el.style.transform = '';
 					el.classList.add('opacity-0');
 					if (homeTeam) {
 						homeTeam.classList.remove('text-green-600', 'dark:text-green-400', 'font-bold');
@@ -139,16 +171,24 @@
 		function toggleScores(btn) {
 			const isShowing = btn.innerText.trim().toLowerCase() === "show scores";
 			btn.innerText = isShowing ? "Hide Scores" : "Show Scores";
-
 			applyScoresState(document.getElementById('results-container'), isShowing);
 			applyScoresState(document.getElementById('search-results'), isShowing);
+			applyScoresState(document.getElementById('mobile-search-results'), isShowing);
 		}
 
-		function syncSearchSpoiler() {
+		function syncSearchSpoiler(targetId = 'search-results') {
 			const btn = document.querySelector('button[onclick="toggleScores(this)"]');
 			if (!btn) return;
-			const shouldShow = btn.innerText.trim() === "Hide Scores";
-			applyScoresState(document.getElementById('search-results'), shouldShow);
+			const shouldShow = btn.innerText.trim().toLowerCase() === "hide scores";
+			applyScoresState(document.getElementById(targetId), shouldShow);
+		}
+
+		function toggleMobileSearch() {
+			const bar = document.getElementById('mobile-search-bar');
+			bar.classList.toggle('hidden');
+			if (!bar.classList.contains('hidden')) {
+				document.getElementById('mobile-team-search').focus();
+			}
 		}
 	</script>
 	<style>
@@ -182,19 +222,9 @@
 			text-transform: uppercase;
 		}
 
-		/* Cards */
-		.card {
-			border-radius: 2px;
-			border: 1px solid #e5e7eb;
-			transition: box-shadow 0.15s ease;
-		}
-		.dark .card {
-			border-color: #3f3f46;
-		}
-
 		/* Match row */
 		.match-row {
-			border-radius: 1px;
+			border-radius: 6px;
 			transition: background 0.12s ease;
 		}
 
@@ -217,6 +247,12 @@
 			border-radius: 2px;
 		}
 
+		/* Score reveal animation */
+		.actual-score {
+			display: inline-block;
+			transition: opacity 0.25s ease, transform 0.25s ease;
+		}
+
 		/* Back to top */
 		#backToTop {
 			font-family: var(--font-display);
@@ -230,17 +266,53 @@
 			justify-content: center;
 		}
 
-		#search-results:empty {
+		/* Page-load stagger animations */
+		@keyframes fadeInUp {
+			from { opacity: 0; transform: translateY(14px); }
+			to   { opacity: 1; transform: translateY(0); }
+		}
+
+		.section-animate {
+			animation: fadeInUp 0.45s ease both;
+		}
+
+		#upcoming-container-section  { animation-delay: 0.05s; }
+		#results-container-section   { animation-delay: 0.15s; }
+		#league-standings-section    { animation-delay: 0.25s; }
+
+		/* Skeleton shimmer */
+		@keyframes shimmer {
+			0%   { background-position: -600px 0; }
+			100% { background-position:  600px 0; }
+		}
+
+		.skeleton {
+			background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+			background-size: 1200px 100%;
+			animation: shimmer 1.4s infinite linear;
+			border-radius: 2px;
+		}
+
+		.dark .skeleton {
+			background: linear-gradient(90deg, #3f3f46 25%, #52525b 50%, #3f3f46 75%);
+			background-size: 1200px 100%;
+			animation: shimmer 1.4s infinite linear;
+		}
+
+		#search-results:empty,
+		#mobile-search-results:empty {
 			display: none;
 		}
 
-		#search-results:not(:empty) {
+		#search-results:not(:empty),
+		#mobile-search-results:not(:empty) {
 			display: block;
 		}
 
 		.upcoming-section {
 			height: calc(100% - 16px) !important;
 			min-height: 198px;
+			border-radius: 8px;
 		}
 
 		input[type="search"]::-webkit-search-decoration,
@@ -264,12 +336,10 @@
 			scrollbar-color: rgba(169, 169, 169, 0.3) rgba(240, 240, 240, 0.3);
 		}
 
-		.w-full.overflow-x-auto::-webkit-scrollbar {
-			height: 6px;
-		}
+		.w-full.overflow-x-auto::-webkit-scrollbar { height: 6px; }
 
 		.w-full.overflow-x-auto::-webkit-scrollbar-thumb {
-			background: rgba(243 244 246);
+			background: rgba(243, 244, 246, 1);
 			border-radius: 10px;
 		}
 
@@ -282,9 +352,7 @@
 			scrollbar-color: rgba(100, 100, 100, 0.3) rgba(30, 30, 30, 0.3);
 		}
 
-		.dark .w-full.overflow-x-auto::-webkit-scrollbar {
-			height: 6px;
-		}
+		.dark .w-full.overflow-x-auto::-webkit-scrollbar { height: 6px; }
 
 		.dark .w-full.overflow-x-auto::-webkit-scrollbar-thumb {
 			background: rgba(30, 30, 30, 0.3);
@@ -294,6 +362,20 @@
 		.dark .w-full.overflow-x-auto::-webkit-scrollbar-track {
 			background: rgba(30, 30, 30, 0.3);
 		}
+
+		/* Standings zone legend */
+		.zone-legend {
+			font-family: var(--font-display);
+			font-size: 10px;
+			letter-spacing: 0.05em;
+		}
+
+		.zone-dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 1px;
+			flex-shrink: 0;
+		}
 	</style>
 </head>
 
@@ -301,45 +383,79 @@
 	<nav class="fixed top-0 left-0 w-full bg-white dark:bg-zinc-900 shadow-md z-10">
 		<div class="flex items-center justify-between p-2 px-6">
 			<div class="flex items-center gap-2 sm:gap-4" style="margin-left: -7px;">
-				<a href="#upcoming-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Upcoming</a>
-				<a href="#results-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Results</a>
+				<a href="#upcoming-container-section" data-section="upcoming-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Upcoming</a>
+				<a href="#results-container-section" data-section="results-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Results</a>
 				{% if leagues %}
-				<a href="#league-standings-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Standings</a>
+				<a href="#league-standings-section" data-section="league-standings-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Standings</a>
 				{% endif %}
 			</div>
 
-			<div class="flex items-center gap-4">
-				<div class="relative group hidden sm:block">
+			<div class="flex items-center gap-3">
+				<!-- Desktop search -->
+				<div class="relative hidden sm:block">
 					<div class="flex items-center bg-gray-100 dark:bg-zinc-800 rounded-full px-3 py-1.5 border border-transparent focus-within:border-emerald-500 transition-all">
 						<i class="fas fa-search text-gray-400 mr-2 text-xs"></i>
-						<input type="search" name="q" id="team-search" placeholder="Search teams..." class="bg-transparent text-sm focus:outline-none dark:text-white w-32 sm:w-64" hx-get="/search" hx-target="#search-results" hx-trigger="keyup changed delay:300ms, search" hx-on::after-swap="" autocomplete="off">
+						<input type="search" name="q" id="team-search" placeholder="Search teams..." class="bg-transparent text-sm focus:outline-none dark:text-white w-32 sm:w-64" hx-get="/search" hx-target="#search-results" hx-trigger="keyup changed delay:300ms, search" autocomplete="off">
 						<button onclick="document.getElementById('team-search').value = ''; htmx.trigger('#team-search', 'search')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1">
 							<i class="fas fa-times-circle text-xs"></i>
 						</button>
 					</div>
-					<!-- Autocomplete Dropdown -->
-					<div id="search-results" class="absolute top-full right-0 w-72 sm:w-96 bg-white dark:bg-zinc-800 shadow-xl border border-gray-100 dark:border-zinc-700 rounded-none mt-4 max-h-[70vh] overflow-y-auto z-50"></div>
+					<div id="search-results" class="absolute top-full right-0 w-72 sm:w-96 bg-white dark:bg-zinc-800 shadow-xl border border-gray-100 dark:border-zinc-700 mt-4 max-h-[70vh] overflow-y-auto z-50"></div>
 				</div>
-				<div class="flex items-center sm:border-l dark:border-zinc-700 sm:pl-4">
+
+				<!-- Mobile search toggle -->
+				<button id="mobile-search-toggle" onclick="toggleMobileSearch()" class="sm:hidden text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors text-base px-1">
+					<i class="fas fa-search"></i>
+				</button>
+
+				<div class="flex items-center sm:border-l dark:border-zinc-700 sm:pl-3">
 					<button id="dark-mode-button" class="dark:text-gray-300 hover:text-emerald-500 transition-colors text-xl" hx-post="/submit-night-mode" hx-on::before-request="toggleDarkMode(true);" hx-swap="outerHTML"><i class="fas fa-moon"></i></button>
 					<button id="light-mode-button" class="hidden dark:text-gray-300 hover:text-emerald-500 transition-colors text-xl" hx-post="/submit-blind-mode" hx-on::before-request="toggleDarkMode(false);" hx-swap="outerHTML"><i class="fas fa-sun"></i></button>
 				</div>
 			</div>
 		</div>
+
+		<!-- Mobile search bar (hidden until toggled) -->
+		<div id="mobile-search-bar" class="sm:hidden hidden border-t border-gray-100 dark:border-zinc-700 px-4 py-2 relative">
+			<div class="flex items-center bg-gray-100 dark:bg-zinc-800 rounded-full px-3 py-1.5 border border-transparent focus-within:border-emerald-500 transition-all">
+				<i class="fas fa-search text-gray-400 mr-2 text-xs"></i>
+				<input type="search" name="q" id="mobile-team-search" placeholder="Search teams..."
+					class="bg-transparent text-sm focus:outline-none dark:text-white flex-1"
+					hx-get="/search" hx-target="#mobile-search-results"
+					hx-trigger="keyup changed delay:300ms, search"
+					autocomplete="off">
+				<button onclick="document.getElementById('mobile-team-search').value=''; htmx.trigger('#mobile-team-search','search')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1">
+					<i class="fas fa-times-circle text-xs"></i>
+				</button>
+			</div>
+			<div id="mobile-search-results" class="w-full bg-white dark:bg-zinc-800 shadow-xl border border-gray-100 dark:border-zinc-700 mt-1 max-h-[60vh] overflow-y-auto z-50"></div>
+		</div>
 	</nav>
 
 	<div class="flex flex-col xl:flex-row mt-16">
 		<!-- Upcoming -->
-		<section id="upcoming-container-section" class="w-full xl:w-1/2">
+		<section id="upcoming-container-section" class="section-animate w-full xl:w-1/2">
 			<div class="p-2 px-4">
 				<h1 class="section-heading text-gray-800 dark:text-white">Next Fixtures</h1>
 			</div>
 			<div class="flex flex-col md:flex-row">
 				<div class="w-full">
 					<div id="upcoming-container" class="bg-white border h-full m-2 mx-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white upcoming-section" hx-get="/get-upcoming" hx-trigger="load" hx-swap="innerHTML">
-						<div class="flex flex-col justify-center items-center m-auto p-4 pb-12 mb-8">
-							<div class="mt-[100px] border-2 border-t-2 border-gray-400 border-dashed rounded-full w-32 h-32 animate-bounce"></div>
-							<div class="mt-2 text-center text-gray-400">Loading Upcoming...</div>
+						<!-- Skeleton loader -->
+						<div class="p-4 space-y-4">
+							<div class="skeleton h-4 w-36 mb-5"></div>
+							<div class="skeleton h-3 w-24 mb-3"></div>
+							<div class="space-y-2">
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+							</div>
+							<div class="skeleton h-3 w-24 mt-4 mb-3"></div>
+							<div class="space-y-2">
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -347,7 +463,7 @@
 		</section>
 
 		<!-- Recent Results -->
-		<section id="results-container-section" class="w-full xl:w-1/2 mt-8 xl:mt-0">
+		<section id="results-container-section" class="section-animate w-full xl:w-1/2 mt-8 xl:mt-0">
 			<div class="p-2 px-4 flex items-center justify-between">
 				<h1 class="section-heading text-gray-800 dark:text-white">Recent Results</h1>
 				<button onclick="toggleScores(this)" class="scores-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">Show Scores</button>
@@ -355,9 +471,21 @@
 			<div class="flex flex-col md:flex-row">
 				<div class="w-full">
 					<div id="results-container" class="bg-white border h-full m-2 mx-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white upcoming-section" hx-get="/get-results" hx-trigger="load" hx-swap="innerHTML">
-						<div class="flex flex-col justify-center items-center m-auto p-4 pb-12 mb-8">
-							<div class="mt-[100px] border-2 border-t-2 border-gray-400 border-dashed rounded-full w-32 h-32 animate-bounce"></div>
-							<div class="mt-2 text-center text-gray-400">Loading Results...</div>
+						<!-- Skeleton loader -->
+						<div class="p-4 space-y-4">
+							<div class="skeleton h-4 w-36 mb-5"></div>
+							<div class="skeleton h-3 w-24 mb-3"></div>
+							<div class="space-y-2">
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+							</div>
+							<div class="skeleton h-3 w-24 mt-4 mb-3"></div>
+							<div class="space-y-2">
+								<div class="skeleton h-10 w-full"></div>
+								<div class="skeleton h-10 w-full"></div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -366,7 +494,7 @@
 	</div>
 
 	{% if leagues %}
-	<section id="league-standings-section">
+	<section id="league-standings-section" class="section-animate">
 		<div class="p-2 pt-4 px-4">
 			<h1 class="section-heading text-gray-800 dark:text-white">Football Standings</h1>
 		</div>
@@ -388,7 +516,7 @@
 							<th class="border-b border-b-gray-200 p-2 text-right">Points</th>
 						</tr>
 						{% for row in standings %}
-						<tr class="border-b border-b-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-200 dark:hover:text-black dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white border-l-4 {% if row.zone == 'ucl' %}border-l-blue-600 dark:border-l-blue-500{% elif row.zone == 'ucl-q' %}border-l-blue-400 dark:border-l-blue-400{% elif row.zone == 'uel' %}border-l-orange-500 dark:border-l-orange-500{% elif row.zone == 'uecl' %}border-l-green-500 dark:border-l-green-500{% elif row.zone == 'rel' %}border-l-red-600 dark:border-l-red-500{% elif row.zone == 'rel-po' %}border-l-red-400 dark:border-l-red-400{% else %}border-l-1 border-l-gray-200 dark:border-l-gray-200{% endif %}">
+						<tr class="border-b border-b-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white border-l-4 {% if row.zone == 'ucl' %}border-l-blue-600 dark:border-l-blue-500{% elif row.zone == 'ucl-q' %}border-l-blue-400 dark:border-l-blue-400{% elif row.zone == 'uel' %}border-l-orange-500 dark:border-l-orange-500{% elif row.zone == 'uecl' %}border-l-green-500 dark:border-l-green-500{% elif row.zone == 'rel' %}border-l-red-600 dark:border-l-red-500{% elif row.zone == 'rel-po' %}border-l-red-400 dark:border-l-red-400{% else %}{% endif %}">
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ loop.index }}.</td>
 							<td class="border-b border-b-gray-200 p-2 text-left">
 								<div class="flex items-center gap-2">
@@ -403,10 +531,33 @@
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.draws }}</td>
 							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.losses }}</td>
 							<td class="border-b border-b-gray-200 p-2 text-right {% if row.goal_difference|int > 0 %}text-green-600 dark:text-green-400{% elif row.goal_difference|int < 0 %}text-red-600 dark:text-red-400{% endif %}">{{ row.goal_difference }}</td>
-							<td class="border-b border-b-gray-200 p-2 text-right">{{ row.points }}</td>
+							<td class="border-b border-b-gray-200 p-2 text-right font-semibold">{{ row.points }}</td>
 						</tr>
 						{% endfor %}
 					</table>
+
+					<!-- Zone legend — only shows zones present in this table -->
+					{% set zones = standings | map(attribute='zone') | list %}
+					<div class="zone-legend mt-3 flex flex-col gap-1 text-gray-500 dark:text-gray-400">
+						{% if 'ucl' in zones %}
+						<div class="flex items-center gap-2"><span class="zone-dot bg-blue-600"></span>Champions League</div>
+						{% endif %}
+						{% if 'ucl-q' in zones %}
+						<div class="flex items-center gap-2"><span class="zone-dot bg-blue-400"></span>CL Qualifying</div>
+						{% endif %}
+						{% if 'uel' in zones %}
+						<div class="flex items-center gap-2"><span class="zone-dot bg-orange-500"></span>Europa League</div>
+						{% endif %}
+						{% if 'uecl' in zones %}
+						<div class="flex items-center gap-2"><span class="zone-dot bg-green-500"></span>Conference League</div>
+						{% endif %}
+						{% if 'rel' in zones %}
+						<div class="flex items-center gap-2"><span class="zone-dot bg-red-600"></span>Relegation</div>
+						{% endif %}
+						{% if 'rel-po' in zones %}
+						<div class="flex items-center gap-2"><span class="zone-dot bg-red-400"></span>Relegation Play-off</div>
+						{% endif %}
+					</div>
 				</div>
 				{% endfor %}
 			</div>
@@ -414,7 +565,7 @@
 	</section>
 	{% endif %}
 
-	<button id="backToTop" hx-on:click="backToTopClick()" class="fixed bottom-4 right-4 bg-gray-500 text-white p-3 rounded-full shadow-md hover:bg-gray-600 transition-all opacity-0 pointer-events-none transition-opacity duration-300">
+	<button id="backToTop" hx-on:click="backToTopClick()" class="fixed bottom-4 right-4 bg-gray-500 text-white shadow-md hover:bg-emerald-600 transition-all opacity-0 pointer-events-none transition-opacity duration-300">
 		↑
 	</button>
 </body>

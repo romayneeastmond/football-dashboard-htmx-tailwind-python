@@ -36,6 +36,49 @@ def debug_scrape():
             "is_success": False
         })
 
+@app.route("/debug-cpl")
+def debug_cpl():
+    results = {}
+
+    # Test current CPL API
+    cpl_url = "https://api-sdp.cplsoccer.com/v1/cpl/football/seasons/cpl::Football_Season::c479ab0916a24c3390f1ce2c021ace54/standings/overall?locale=en-US&orderBy=rank&direction=asc"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    try:
+        r = requests.get(cpl_url, headers=headers, timeout=10)
+        results["cpl_api"] = {"status_code": r.status_code, "is_success": r.status_code == 200, "url": cpl_url}
+    except Exception as e:
+        results["cpl_api"] = {"error": str(e), "is_success": False, "url": cpl_url}
+
+    # Test ESPN CPL endpoint
+    espn_url = "https://site.api.espn.com/apis/v2/sports/soccer/can.1/standings"
+    try:
+        r2 = requests.get(espn_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        data = r2.json()
+        results["espn_can1"] = {
+            "status_code": r2.status_code,
+            "is_success": r2.status_code == 200,
+            "league_name": data.get("name", "unknown"),
+            "url": espn_url
+        }
+    except Exception as e:
+        results["espn_can1"] = {"error": str(e), "is_success": False, "url": espn_url}
+
+    # Also try cpl.1
+    espn_url2 = "https://site.api.espn.com/apis/v2/sports/soccer/cpl.1/standings"
+    try:
+        r3 = requests.get(espn_url2, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        data2 = r3.json()
+        results["espn_cpl1"] = {
+            "status_code": r3.status_code,
+            "is_success": r3.status_code == 200,
+            "league_name": data2.get("name", "unknown"),
+            "url": espn_url2
+        }
+    except Exception as e:
+        results["espn_cpl1"] = {"error": str(e), "is_success": False, "url": espn_url2}
+
+    return jsonify(results)
+
 def filter_events(events, search_term):
     if not search_term:
         return events

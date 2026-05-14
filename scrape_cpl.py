@@ -1,5 +1,4 @@
 import requests
-import json
 
 def scrape_cpl():
     url = "https://api-sdp.cplsoccer.com/v1/cpl/football/seasons/cpl::Football_Season::c479ab0916a24c3390f1ce2c021ace54/standings/overall?locale=en-US&orderBy=rank&direction=asc"
@@ -7,10 +6,6 @@ def scrape_cpl():
     try:
         response = requests.get(url, headers=headers, timeout=10)
         data = response.json()
-        
-        with open("cpl_api_dump.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-
         standings = []
         
         # Find the overall table which has "type": "table"

@@ -18,7 +18,7 @@
 		<div class="p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 cursor-default transition-colors border-b last:border-0 border-gray-100 dark:border-zinc-700">
 			<div class="text-[10px] text-gray-400 mb-1 px-1">{{ event.date }}</div>
 			<div class="grid grid-cols-[0.7fr_1.2fr_0.4fr_1.2fr] items-center text-xs">
-				<div class="font-bold text-emerald-600 dark:text-emerald-400 parse-time pr-2" data-bst="{{ match.time }}">{{ match.time }}</div>
+				<div class="font-bold text-emerald-600 dark:text-emerald-400 pr-2" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em">{{ match.time }}</div>
 				<div class="flex items-center justify-end gap-1.5 min-w-0 pr-2">
 					<span class="font-medium truncate dark:text-white" title="{{ match.home_team }}">{{ match.home_team }}</span>
 					{% if home_logo %}<img src="{{ home_logo }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">

@@ -61,7 +61,19 @@ def parse_guardian_date(date_str):
 
 
 def _normalise(name):
-    return re.sub(r"\b(fc|cf|afc|sc|fk|ac|as)\b", "", name.lower()).strip()
+    clean = re.sub(r"\b(fc|cf|afc|sc|fk|ac|as)\b", "", name.lower()).strip()
+    aliases = {
+        "man utd": "manchester united",
+        "man city": "manchester city",
+        "nottm forest": "nottingham forest",
+        "c palace": "crystal palace",
+        "spurs": "tottenham hotspur",
+        "wolves": "wolverhampton wanderers",
+        "sheff utd": "sheffield united",
+        "sheff wed": "sheffield wednesday",
+        "boro": "middlesbrough"
+    }
+    return aliases.get(clean, clean)
 
 
 def _name_match(a, b):

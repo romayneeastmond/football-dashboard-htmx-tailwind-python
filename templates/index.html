@@ -62,21 +62,40 @@
 
 			// Nav active state via Intersection Observer
 			const sectionIds = ['upcoming-container-section', 'results-container-section', 'league-standings-section'];
+			let visibleSections = new Set();
 			const observer = new IntersectionObserver((entries) => {
 				entries.forEach(entry => {
 					if (entry.isIntersecting) {
-						document.querySelectorAll('.nav-link').forEach(l => {
-							l.classList.remove('text-emerald-500', 'dark:text-emerald-400');
-							l.classList.add('text-gray-600', 'dark:text-gray-300');
-						});
-						const active = document.querySelector(`.nav-link[data-section="${entry.target.id}"]`);
-						if (active) {
-							active.classList.add('text-emerald-500', 'dark:text-emerald-400');
-							active.classList.remove('text-gray-600', 'dark:text-gray-300');
-						}
+						visibleSections.add(entry.target.id);
+					} else {
+						visibleSections.delete(entry.target.id);
 					}
 				});
-			}, { threshold: 0.25, rootMargin: '-60px 0px 0px 0px' });
+
+				const activeId = sectionIds.find(id => visibleSections.has(id));
+				if (activeId) {
+					document.querySelectorAll('.nav-link').forEach(l => {
+						l.classList.remove('text-emerald-500', 'dark:text-emerald-400');
+						l.classList.add('text-gray-600', 'dark:text-gray-300');
+					});
+					const active = document.querySelector(`.nav-link[data-section="${activeId}"]`);
+					if (active) {
+						active.classList.add('text-emerald-500', 'dark:text-emerald-400');
+						active.classList.remove('text-gray-600', 'dark:text-gray-300');
+					}
+				} else if (window.scrollY < 100) {
+					// Fallback to first if we are near top
+					document.querySelectorAll('.nav-link').forEach(l => {
+						l.classList.remove('text-emerald-500', 'dark:text-emerald-400');
+						l.classList.add('text-gray-600', 'dark:text-gray-300');
+					});
+					const active = document.querySelector(`.nav-link[data-section="${sectionIds[0]}"]`);
+					if (active) {
+						active.classList.add('text-emerald-500', 'dark:text-emerald-400');
+						active.classList.remove('text-gray-600', 'dark:text-gray-300');
+					}
+				}
+			}, { threshold: 0.1, rootMargin: '-60px 0px 0px 0px' });
 
 			sectionIds.forEach(id => {
 				const el = document.getElementById(id);
@@ -198,7 +217,7 @@
 					<span class="text-[10px] uppercase tracking-widest" style="font-family:'Barlow Condensed',sans-serif">Loading stats&hellip;</span>
 				</div>`;
 			const backdrop = document.getElementById('stats-backdrop');
-			const drawer   = document.getElementById('stats-drawer');
+			const drawer = document.getElementById('stats-drawer');
 			backdrop.classList.remove('hidden');
 			requestAnimationFrame(() => {
 				backdrop.classList.remove('opacity-0');
@@ -208,7 +227,7 @@
 
 		function closeStatsDrawer() {
 			const backdrop = document.getElementById('stats-backdrop');
-			const drawer   = document.getElementById('stats-drawer');
+			const drawer = document.getElementById('stats-drawer');
 			backdrop.classList.add('opacity-0');
 			drawer.classList.add('translate-x-full');
 			setTimeout(() => backdrop.classList.add('hidden'), 300);
@@ -244,7 +263,12 @@
 			font-family: var(--font-body);
 		}
 
-		h1, h2, h3, h4, h5, .nav-link {
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		.nav-link {
 			font-family: var(--font-display);
 			letter-spacing: 0.02em;
 		}
@@ -309,22 +333,42 @@
 
 		/* Page-load stagger animations */
 		@keyframes fadeInUp {
-			from { opacity: 0; transform: translateY(14px); }
-			to   { opacity: 1; transform: translateY(0); }
+			from {
+				opacity: 0;
+				transform: translateY(14px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
 		}
 
 		.section-animate {
 			animation: fadeInUp 0.45s ease both;
 		}
 
-		#upcoming-container-section  { animation-delay: 0.05s; }
-		#results-container-section   { animation-delay: 0.15s; }
-		#league-standings-section    { animation-delay: 0.25s; }
+		#upcoming-container-section {
+			animation-delay: 0.05s;
+		}
+
+		#results-container-section {
+			animation-delay: 0.15s;
+		}
+
+		#league-standings-section {
+			animation-delay: 0.25s;
+		}
 
 		/* Skeleton shimmer */
 		@keyframes shimmer {
-			0%   { background-position: -600px 0; }
-			100% { background-position:  600px 0; }
+			0% {
+				background-position: -600px 0;
+			}
+
+			100% {
+				background-position: 600px 0;
+			}
 		}
 
 		.skeleton {
@@ -377,7 +421,9 @@
 			scrollbar-color: rgba(169, 169, 169, 0.3) rgba(240, 240, 240, 0.3);
 		}
 
-		.w-full.overflow-x-auto::-webkit-scrollbar { height: 6px; }
+		.w-full.overflow-x-auto::-webkit-scrollbar {
+			height: 6px;
+		}
 
 		.w-full.overflow-x-auto::-webkit-scrollbar-thumb {
 			background: rgba(243, 244, 246, 1);
@@ -393,7 +439,9 @@
 			scrollbar-color: rgba(100, 100, 100, 0.3) rgba(30, 30, 30, 0.3);
 		}
 
-		.dark .w-full.overflow-x-auto::-webkit-scrollbar { height: 6px; }
+		.dark .w-full.overflow-x-auto::-webkit-scrollbar {
+			height: 6px;
+		}
 
 		.dark .w-full.overflow-x-auto::-webkit-scrollbar-thumb {
 			background: rgba(30, 30, 30, 0.3);
@@ -460,11 +508,7 @@
 		<div id="mobile-search-bar" class="sm:hidden hidden border-t border-gray-100 dark:border-zinc-700 px-4 py-2 relative">
 			<div class="flex items-center bg-gray-100 dark:bg-zinc-800 rounded-full px-3 py-1.5 border border-transparent focus-within:border-emerald-500 transition-all">
 				<i class="fas fa-search text-gray-400 mr-2 text-xs"></i>
-				<input type="search" name="q" id="mobile-team-search" placeholder="Search teams..."
-					class="bg-transparent text-sm focus:outline-none dark:text-white flex-1"
-					hx-get="/search" hx-target="#mobile-search-results"
-					hx-trigger="keyup changed delay:300ms, search"
-					autocomplete="off">
+				<input type="search" name="q" id="mobile-team-search" placeholder="Search teams..." class="bg-transparent text-sm focus:outline-none dark:text-white flex-1" hx-get="/search" hx-target="#mobile-search-results" hx-trigger="keyup changed delay:300ms, search" autocomplete="off">
 				<button onclick="document.getElementById('mobile-team-search').value=''; htmx.trigger('#mobile-team-search','search')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-1">
 					<i class="fas fa-times-circle text-xs"></i>
 				</button>
@@ -549,11 +593,11 @@
 						<tr class="border-l-4 bg-gray-200 dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white">
 							<th class="border-b border-b-gray-200 p-2">&nbsp;</th>
 							<th class="border-b border-b-gray-200 p-2 text-left">Team</th>
-							<th class="border-b border-b-gray-200 p-2 text-center">GP</th>
-							<th class="border-b border-b-gray-200 p-2 text-center">W</th>
-							<th class="border-b border-b-gray-200 p-2 text-center">D</th>
-							<th class="border-b border-b-gray-200 p-2 text-center">L</th>
-							<th class="border-b border-b-gray-200 p-2 text-center">GD</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">GP</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">W</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">D</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">L</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">GD</th>
 							<th class="border-b border-b-gray-200 p-2 text-right">Points</th>
 						</tr>
 						{% for row in standings %}

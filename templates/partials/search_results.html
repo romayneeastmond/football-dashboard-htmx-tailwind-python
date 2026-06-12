@@ -13,8 +13,8 @@
 		{% for event in upcoming %}
 		{% for val in event.match_values %}
 		{% for match in val.matches %}
-		{% set home_logo = find_logo(logos, match.home_team) %}
-		{% set away_logo = find_logo(logos, match.away_team) %}
+		{% set home_logo = match.home_logo if match.home_logo else find_logo(logos, match.home_team) %}
+		{% set away_logo = match.away_logo if match.away_logo else find_logo(logos, match.away_team) %}
 		<div class="p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 cursor-default transition-colors border-b last:border-0 border-gray-100 dark:border-zinc-700">
 			<div class="text-[10px] text-gray-400 mb-1 px-1">{{ event.date }}</div>
 			<div class="grid grid-cols-[0.7fr_1.2fr_0.4fr_1.2fr] items-center text-xs">
@@ -46,8 +46,8 @@
 		{% for event in results %}
 		{% for val in event.match_values %}
 		{% for match in val.matches %}
-		{% set home_logo = find_logo(logos, match.home_team) %}
-		{% set away_logo = find_logo(logos, match.away_team) %}
+		{% set home_logo = match.home_logo if match.home_logo else find_logo(logos, match.home_team) %}
+		{% set away_logo = match.away_logo if match.away_logo else find_logo(logos, match.away_team) %}
 		<div class="p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 cursor-default transition-colors border-b last:border-0 border-gray-100 dark:border-zinc-700">
 			<div class="text-[10px] text-gray-400 mb-1 px-1">{{ event.date }}</div>
 			<div class="grid grid-cols-[0.7fr_1.2fr_0.4fr_1.2fr] items-center text-xs">

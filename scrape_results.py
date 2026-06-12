@@ -112,18 +112,24 @@ def scrape_wc_results():
         competitors = comp.get("competitors", [])
         home = next((c for c in competitors if c.get("homeAway") == "home"), {})
         away = next((c for c in competitors if c.get("homeAway") == "away"), {})
-        home_name = home.get("team", {}).get("displayName", "")
-        away_name = away.get("team", {}).get("displayName", "")
+        home_team = home.get("team", {})
+        away_team = away.get("team", {})
+        home_name = home_team.get("displayName", "")
+        away_name = away_team.get("displayName", "")
         home_score = home.get("score", "")
         away_score = away.get("score", "")
         score = f"{home_score} - {away_score}" if home_score != "" and away_score != "" else "N/A"
 
         if not home_name or not away_name:
             continue
+        home_logos = home_team.get("logos", [])
+        away_logos = away_team.get("logos", [])
+        home_logo = home_logos[0].get("href", "") if home_logos else home_team.get("logo", "")
+        away_logo = away_logos[0].get("href", "") if away_logos else away_team.get("logo", "")
 
         if date_label not in by_date:
             by_date[date_label] = []
-        by_date[date_label].append({"time": score, "home_team": home_name, "away_team": away_name})
+        by_date[date_label].append({"time": score, "home_team": home_name, "away_team": away_name, "home_logo": home_logo, "away_logo": away_logo})
 
     # Most recent first
     sorted_dates = sorted(by_date.keys(), reverse=True)

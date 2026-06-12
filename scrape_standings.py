@@ -73,3 +73,42 @@ def scrape_standings(url, league_name=None):
         return []
 
     return standings
+
+
+def scrape_wc_standings():
+    """Return WC group tables: [{name, teams: [{team, logo, gp, w, d, l, gf, ga, gd, pts}]}]"""
+    api_url = "https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(api_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        print(f"Error fetching WC standings: {e}")
+        return []
+
+    groups = []
+    for group in data.get("children", []):
+        group_name = group.get("name", "")
+        entries = group.get("standings", {}).get("entries", [])
+        teams = []
+        for entry in entries:
+            team_data = entry.get("team", {})
+            stats = {s.get("name"): s.get("displayValue") for s in entry.get("stats", [])}
+            logo_list = team_data.get("logos", [])
+            teams.append({
+                "team": team_data.get("displayName", "Unknown"),
+                "logo": logo_list[0].get("href", "") if logo_list else "",
+                "games_played": stats.get("gamesPlayed", "0"),
+                "wins": stats.get("wins", "0"),
+                "draws": stats.get("ties", "0"),
+                "losses": stats.get("losses", "0"),
+                "goals_for": stats.get("pointsFor", "0"),
+                "goals_against": stats.get("pointsAgainst", "0"),
+                "goal_difference": stats.get("pointDifferential", "0"),
+                "points": stats.get("points", "0"),
+            })
+        if teams:
+            groups.append({"name": group_name, "teams": teams})
+
+    return groups

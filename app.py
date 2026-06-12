@@ -1,5 +1,5 @@
 import requests
-from scrape_standings import scrape_standings
+from scrape_standings import scrape_standings, scrape_wc_standings
 from scrape_upcoming import scrape_upcoming
 from scrape_cpl import scrape_cpl
 from scrape_results import scrape_results
@@ -180,8 +180,9 @@ def index():
     }    
 
     leagues = {name: data for name, data in leagues.items() if data}
-    
-    return render_template("index.html", leagues=leagues)
+    wc_groups = scrape_wc_standings()
+
+    return render_template("index.html", leagues=leagues, wc_groups=wc_groups)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def scrape_results():
     url = "https://www.theguardian.com/football/results"
@@ -66,6 +66,68 @@ def scrape_results():
 
                 matches.append({"time": match_result, "home_team": home_team, "away_team": away_team})
        
-            events[-1]["match_values"].append({ "matches":  matches })       
-    
-    return events
+            events[-1]["match_values"].append({ "matches":  matches })
+
+    wc = scrape_wc_results()
+    return wc + events
+
+
+WC_COMPLETED_STATUSES = {"STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FT", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}
+
+def scrape_wc_results():
+    """Fetch completed WC matches from ESPN for the last 10 days."""
+    headers = {"User-Agent": "Mozilla/5.0"}
+    today = datetime.utcnow()
+
+    all_events = []
+    for offset in range(10):
+        day = (today - timedelta(days=offset)).strftime("%Y%m%d")
+        try:
+            r = requests.get(
+                "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard",
+                params={"dates": day},
+                headers=headers,
+                timeout=8,
+            )
+            if r.status_code == 200:
+                all_events.extend(r.json().get("events", []))
+        except Exception:
+            continue
+
+    by_date = {}
+    for event in all_events:
+        status_name = event.get("status", {}).get("type", {}).get("name", "")
+        if status_name not in WC_COMPLETED_STATUSES:
+            continue
+
+        date_iso = event.get("date", "")
+        try:
+            dt_utc = datetime.strptime(date_iso, "%Y-%m-%dT%H:%MZ")
+            dt_bst = dt_utc + timedelta(hours=1)
+            date_label = dt_bst.strftime("%A %d %B %Y")
+        except Exception:
+            date_label = "TBD"
+
+        comp = event.get("competitions", [{}])[0]
+        competitors = comp.get("competitors", [])
+        home = next((c for c in competitors if c.get("homeAway") == "home"), {})
+        away = next((c for c in competitors if c.get("homeAway") == "away"), {})
+        home_name = home.get("team", {}).get("displayName", "")
+        away_name = away.get("team", {}).get("displayName", "")
+        home_score = home.get("score", "")
+        away_score = away.get("score", "")
+        score = f"{home_score} - {away_score}" if home_score != "" and away_score != "" else "N/A"
+
+        if not home_name or not away_name:
+            continue
+
+        if date_label not in by_date:
+            by_date[date_label] = []
+        by_date[date_label].append({"time": score, "home_team": home_name, "away_team": away_name})
+
+    # Most recent first
+    sorted_dates = sorted(by_date.keys(), reverse=True)
+    return [
+        {"date": date_label, "match_values": [{"title": "FIFA World Cup"}, {"matches": by_date[date_label]}]}
+        for date_label in sorted_dates
+    ]

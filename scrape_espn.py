@@ -10,7 +10,7 @@ BASE    = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 # All leagues the app tracks
-LEAGUES = ["eng.1", "esp.1", "ita.1", "ger.1", "fra.1", "eng.2", "por.1", "can.1"]
+LEAGUES = ["eng.1", "esp.1", "ita.1", "ger.1", "fra.1", "eng.2", "por.1", "can.1", "fifa.world"]
 
 # ESPN stat key → (display label, suffix for display value)
 ESPN_STAT_MAP = {

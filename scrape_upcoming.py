@@ -83,10 +83,68 @@ def scrape_upcoming():
        
             events[-1]["match_values"].append({ "matches":  matches })
 
+    wc = scrape_wc_upcoming()
     if len(events) == 0:
-        return scrape_upcoming_alt()
+        events = scrape_upcoming_alt()
+    return wc + events
 
-    return events
+
+WC_UPCOMING_STATUSES = {"STATUS_SCHEDULED", "STATUS_IN_PROGRESS", "STATUS_HALFTIME"}
+
+def scrape_wc_upcoming():
+    """Fetch scheduled/live WC fixtures from ESPN for the next 10 days."""
+    headers = {"User-Agent": "Mozilla/5.0"}
+    today = datetime.utcnow()
+
+    all_events = []
+    for offset in range(10):
+        day = (today + timedelta(days=offset)).strftime("%Y%m%d")
+        try:
+            r = requests.get(
+                "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard",
+                params={"dates": day},
+                headers=headers,
+                timeout=8,
+            )
+            if r.status_code == 200:
+                all_events.extend(r.json().get("events", []))
+        except Exception:
+            continue
+
+    by_date = {}
+    for event in all_events:
+        status_name = event.get("status", {}).get("type", {}).get("name", "")
+        if status_name not in WC_UPCOMING_STATUSES:
+            continue
+
+        date_iso = event.get("date", "")
+        try:
+            dt_utc = datetime.strptime(date_iso, "%Y-%m-%dT%H:%MZ")
+            # Convert UTC → BST (+1) so convert_time can apply the user's offset from BST
+            dt_bst = dt_utc + timedelta(hours=1)
+            date_label = dt_bst.strftime("%A %d %B %Y")
+            time_label = convert_time(dt_bst.strftime("%H:%M"))
+        except Exception:
+            date_label = "TBD"
+            time_label = "TBD"
+
+        comp = event.get("competitions", [{}])[0]
+        competitors = comp.get("competitors", [])
+        home = next((c for c in competitors if c.get("homeAway") == "home"), {})
+        away = next((c for c in competitors if c.get("homeAway") == "away"), {})
+        home_name = home.get("team", {}).get("displayName", "")
+        away_name = away.get("team", {}).get("displayName", "")
+        if not home_name or not away_name:
+            continue
+
+        if date_label not in by_date:
+            by_date[date_label] = []
+        by_date[date_label].append({"time": time_label, "home_team": home_name, "away_team": away_name})
+
+    return [
+        {"date": date_label, "match_values": [{"title": "FIFA World Cup"}, {"matches": matches}]}
+        for date_label, matches in by_date.items()
+    ]
 
 def scrape_upcoming_alt():
     url = "https://www.theguardian.com/football/fixtures"

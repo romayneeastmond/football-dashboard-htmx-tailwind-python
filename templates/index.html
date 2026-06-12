@@ -61,7 +61,7 @@
 			}
 
 			// Nav active state via Intersection Observer
-			const sectionIds = ['upcoming-container-section', 'results-container-section', 'league-standings-section'];
+			const sectionIds = ['upcoming-container-section', 'results-container-section', 'wc-groups-section', 'league-standings-section'];
 			let visibleSections = new Set();
 			const observer = new IntersectionObserver((entries) => {
 				entries.forEach(entry => {
@@ -474,6 +474,9 @@
 			<div class="flex items-center gap-2 sm:gap-4" style="margin-left: -7px;">
 				<a href="#upcoming-container-section" data-section="upcoming-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Upcoming</a>
 				<a href="#results-container-section" data-section="results-container-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Results</a>
+				{% if wc_groups %}
+				<a href="#wc-groups-section" data-section="wc-groups-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">World Cup</a>
+				{% endif %}
 				{% if leagues %}
 				<a href="#league-standings-section" data-section="league-standings-section" class="nav-link text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 text-sm tracking-widest uppercase font-bold transition-colors">Standings</a>
 				{% endif %}
@@ -577,6 +580,64 @@
 			</div>
 		</section>
 	</div>
+
+	{% if wc_groups %}
+	<section id="wc-groups-section" class="section-animate" style="animation-delay:0.2s">
+		<div class="p-2 pt-4 px-4 flex items-center gap-2">
+			<h1 class="section-heading text-gray-800 dark:text-white">2026 FIFA World Cup</h1>
+			<span class="text-[10px] font-bold uppercase tracking-widest bg-amber-500 text-white px-2 py-0.5 rounded-sm" style="font-family:'Barlow Condensed',sans-serif">Group Stage</span>
+		</div>
+		<div class="w-full overflow-x-auto p-2 px-4">
+			<div class="flex space-x-4 mb-4 min-w-max">
+				{% for group in wc_groups %}
+				<div class="bg-white border col-span-1 p-4 shadow-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-white" style="border-radius:2px">
+					<h2 class="section-heading text-gray-800 dark:text-white mb-3 text-sm">{{ group.name }}</h2>
+					<table class="standings-table border-collapse border border-gray-200 table-auto text-xs w-[420px]">
+						<tr class="bg-gray-200 dark:bg-zinc-800 dark:text-white">
+							<th class="border-b border-b-gray-200 p-2 w-6">&nbsp;</th>
+							<th class="border-b border-b-gray-200 p-2 text-left">Team</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">GP</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">W</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">D</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">L</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">GF</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">GA</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">GD</th>
+							<th class="border-b border-b-gray-200 p-2 text-right">Pts</th>
+						</tr>
+						{% for team in group.teams %}
+						{% set pos = loop.index %}
+						<tr class="border-b border-b-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-800 dark:border-b-zinc-700 dark:text-white border-l-4 {% if pos <= 2 %}border-l-amber-500{% elif pos == 3 %}border-l-gray-300 dark:border-l-zinc-500{% else %}border-l-transparent{% endif %}">
+							<td class="p-2 text-right text-gray-400">{{ pos }}</td>
+							<td class="p-2 text-left">
+								<div class="flex items-center gap-2">
+									{% if team.logo %}
+									<img src="{{ team.logo }}" alt="{{ team.team }}" class="w-4 h-4 object-contain">
+									{% endif %}
+									<span>{{ team.team }}</span>
+								</div>
+							</td>
+							<td class="p-2 text-right">{{ team.games_played }}</td>
+							<td class="p-2 text-right">{{ team.wins }}</td>
+							<td class="p-2 text-right">{{ team.draws }}</td>
+							<td class="p-2 text-right">{{ team.losses }}</td>
+							<td class="p-2 text-right">{{ team.goals_for }}</td>
+							<td class="p-2 text-right">{{ team.goals_against }}</td>
+							<td class="p-2 text-right {% if team.goal_difference|int > 0 %}text-green-600 dark:text-green-400{% elif team.goal_difference|int < 0 %}text-red-600 dark:text-red-400{% endif %}">{{ team.goal_difference }}</td>
+							<td class="p-2 text-right font-semibold">{{ team.points }}</td>
+						</tr>
+						{% endfor %}
+					</table>
+				</div>
+				{% endfor %}
+			</div>
+			<div class="zone-legend flex gap-4 text-gray-500 dark:text-gray-400 pb-2">
+				<div class="flex items-center gap-2"><span class="zone-dot bg-amber-500"></span>Advance to Round of 32</div>
+				<div class="flex items-center gap-2"><span class="zone-dot bg-gray-300 dark:bg-zinc-500"></span>3rd Place (may advance)</div>
+			</div>
+		</div>
+	</section>
+	{% endif %}
 
 	{% if leagues %}
 	<section id="league-standings-section" class="section-animate">

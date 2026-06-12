@@ -109,6 +109,13 @@ def scrape_wc_standings():
                 "points": stats.get("points", "0"),
             })
         if teams:
+            teams.sort(key=lambda t: (
+                -int(t["points"] or 0),
+                -int(t["goal_difference"] or 0),
+                -int(t["goals_for"] or 0),
+                int(t["goals_against"] or 0),
+                -int(t["wins"] or 0),
+            ))
             groups.append({"name": group_name, "teams": teams})
 
     return groups

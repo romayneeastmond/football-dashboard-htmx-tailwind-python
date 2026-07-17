@@ -83,10 +83,9 @@ def scrape_upcoming():
        
             events[-1]["match_values"].append({ "matches":  matches })
 
-    wc = scrape_wc_upcoming()
     if len(events) == 0:
         events = scrape_upcoming_alt()
-    return wc + events
+    return events
 
 
 WC_UPCOMING_STATUSES = {"STATUS_SCHEDULED", "STATUS_IN_PROGRESS", "STATUS_HALFTIME"}

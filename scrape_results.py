@@ -68,8 +68,7 @@ def scrape_results():
        
             events[-1]["match_values"].append({ "matches":  matches })
 
-    wc = scrape_wc_results()
-    return wc + events
+    return events
 
 
 WC_COMPLETED_STATUSES = {"STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FT", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}

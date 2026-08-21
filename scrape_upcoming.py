@@ -1,40 +1,6 @@
 import requests
-import os
 from datetime import datetime, timedelta
 from scrape_espn import LEAGUE_NAMES
-
-def convert_time(time_str):
-    try:
-        offset = int(os.environ.get("TIMEZONE_OFFSET", 0))
-    except (ValueError, TypeError):
-        offset = 0
-
-    if offset == 0:
-        return time_str
-
-    try:
-        # Normalize: replace "." with ":"
-        clean_time = time_str.replace(".", ":").strip()
-        parts = clean_time.split()
-        time_part = parts[0]
-
-        try:
-            dt = datetime.strptime(time_part, "%H:%M")
-        except ValueError:
-            dt = datetime.strptime(time_part, "%I:%M")
-
-        # Apply the hourly offset
-        new_dt = dt + timedelta(hours=offset)
-
-        # Format to 12h clock
-        formatted_time = new_dt.strftime("%I:%M %p").lstrip("0")
-
-        # Return ONLY the formatted time (no BST/EDT labels)
-        return formatted_time
-    except Exception as e:
-        print(f"DEBUG TIME ERROR: {e}")
-        return time_str
-
 
 UPCOMING_STATUSES = {"STATUS_SCHEDULED", "STATUS_IN_PROGRESS", "STATUS_HALFTIME"}
 
@@ -68,8 +34,10 @@ def scrape_upcoming():
                 date_iso = event.get("date", "")
                 try:
                     dt_utc = datetime.strptime(date_iso, "%Y-%m-%dT%H:%MZ")
-                    date_label = dt_utc.strftime("%A %d %B %Y")
-                    time_label = convert_time(dt_utc.strftime("%H:%M"))
+                    # JS formatTimesToLocal() expects BST (UTC+1) and converts to the viewer's local time
+                    dt_bst = dt_utc + timedelta(hours=1)
+                    date_label = dt_bst.strftime("%A %d %B %Y")
+                    time_label = dt_bst.strftime("%H:%M")
                 except Exception:
                     date_label = "TBD"
                     time_label = "TBD"

@@ -13,7 +13,7 @@
 				{% set home_logo = match.home_logo if match.home_logo else find_logo(logos, match.home_team) %}
 				{% set away_logo = match.away_logo if match.away_logo else find_logo(logos, match.away_team) %}
 				<div class="match-row grid grid-cols-[0.5fr_minmax(0,1fr)_0.5fr_minmax(0,1fr)] items-center bg-white border shadow-sm p-3 text-gray-900 hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white">
-					<div class="text-left text-xs font-bold text-emerald-600 dark:text-emerald-400" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em">{{ match.time }}</div>
+					<div class="text-left text-xs font-bold text-emerald-600 dark:text-emerald-400 parse-time" data-bst="{{ match.time }}" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:0.04em">{{ match.time }}</div>
 					<div class="flex items-center justify-end gap-1.5 min-w-0">
 						<span class="text-xs font-medium truncate" title="{{ match.home_team }}">{{ match.home_team }}</span>
 						{% if home_logo %}<img src="{{ home_logo }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">

@@ -1,77 +1,90 @@
 import requests
-from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from scrape_espn import LEAGUE_NAMES
+
+COMPLETED_STATUSES = {"STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FT", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}
 
 def scrape_results():
-    url = "https://www.theguardian.com/football/results"
+    """Fetch completed matches from ESPN for all tracked leagues, last 10 days."""
     headers = {"User-Agent": "Mozilla/5.0"}
+    today = datetime.utcnow()
 
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching results: {e}")
-        return []
-        
-    soup = BeautifulSoup(response.text, "html.parser")
-    events = []
-    
-    # Guardian's new react-based layout classes
-    for container in soup.find_all("section", class_="dcr-jjtqpb"):
-        date = container.find("h2")
-        current_date = date.text.strip() if date else ""
-        
-        events.append({
-            "date": current_date,
-            "match_values": []
-        })    
-        
-        for div in container.find_all("ul"):        
-            matches = []        
-            
-            anchor = div.find_previous_sibling("h3")
-            if not anchor:
+    by_date = {}
+    for league_code, league_name in LEAGUE_NAMES.items():
+        for offset in range(10):
+            day = (today - timedelta(days=offset)).strftime("%Y%m%d")
+            try:
+                r = requests.get(
+                    f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league_code}/scoreboard",
+                    params={"dates": day},
+                    headers=headers,
+                    timeout=8,
+                )
+            except Exception as e:
+                print(f"Error fetching results for {league_code}: {e}")
                 continue
-            anchor_link = anchor.find("a")
-            anchor_text = anchor_link.text.strip() if anchor_link else anchor.text.strip()
-            
-            events[-1]["match_values"].append({ "title": anchor_text })   
-            
-            for li in div.find_all("li"):
-                a_tag = li.find("a")
-                if not a_tag:
-                    continue
-                    
-                home_team_tag = a_tag.find("span", class_="dcr-iqim6o")
-                away_team_tag = a_tag.find("div", class_="dcr-rm7qtf")
-                
-                # Filter out the image tag text from away team
-                home_team = home_team_tag.text.strip() if home_team_tag else "Unknown"
-                away_team = away_team_tag.text.strip() if away_team_tag else "Unknown"
-                
-                # Fetching the score
-                score_container = a_tag.find("span", class_="dcr-17v2nd5")
-                match_result = "N/A"
-                if score_container:
-                    home_score = score_container.find("span", class_="dcr-79z44d")
-                    away_score = score_container.find("span", class_="dcr-1c2czlv")
-                    if home_score and away_score:
-                        match_result = f"{home_score.text.strip()} - {away_score.text.strip()}"
-                
-                # Fallback: Sometimes postponed games or pens have different structures
-                if match_result == "N/A":
-                    status = a_tag.find("span", class_="dcr-yb9mnm")
-                    if status:
-                        match_result = status.text.strip()
+            if r.status_code != 200:
+                continue
 
-                matches.append({"time": match_result, "home_team": home_team, "away_team": away_team})
-       
-            events[-1]["match_values"].append({ "matches":  matches })
+            for event in r.json().get("events", []):
+                status_name = event.get("status", {}).get("type", {}).get("name", "")
+                if status_name not in COMPLETED_STATUSES:
+                    continue
+
+                date_iso = event.get("date", "")
+                try:
+                    dt_utc = datetime.strptime(date_iso, "%Y-%m-%dT%H:%MZ")
+                    date_label = dt_utc.strftime("%A %d %B %Y")
+                except Exception:
+                    date_label = "TBD"
+
+                comp = event.get("competitions", [{}])[0]
+                competitors = comp.get("competitors", [])
+                home = next((c for c in competitors if c.get("homeAway") == "home"), {})
+                away = next((c for c in competitors if c.get("homeAway") == "away"), {})
+                home_team = home.get("team", {})
+                away_team = away.get("team", {})
+                home_name = home_team.get("displayName", "")
+                away_name = away_team.get("displayName", "")
+                home_score = home.get("score", "")
+                away_score = away.get("score", "")
+                score = f"{home_score} - {away_score}" if home_score != "" and away_score != "" else "N/A"
+
+                if not home_name or not away_name:
+                    continue
+                home_logos = home_team.get("logos", [])
+                away_logos = away_team.get("logos", [])
+                home_logo = home_logos[0].get("href", "") if home_logos else home_team.get("logo", "")
+                away_logo = away_logos[0].get("href", "") if away_logos else away_team.get("logo", "")
+
+                match = {
+                    "time": score,
+                    "home_team": home_name,
+                    "away_team": away_name,
+                    "home_logo": home_logo,
+                    "away_logo": away_logo,
+                }
+                by_date.setdefault(date_label, {}).setdefault(league_name, []).append(match)
+
+    events = []
+    for date_label in sorted(by_date.keys(), key=lambda d: _sort_key(d), reverse=True):
+        match_values = []
+        for league_name, matches in by_date[date_label].items():
+            match_values.append({"title": league_name})
+            match_values.append({"matches": matches})
+        events.append({"date": date_label, "match_values": match_values})
 
     return events
 
 
-WC_COMPLETED_STATUSES = {"STATUS_FULL_TIME", "STATUS_FINAL", "STATUS_FT", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"}
+def _sort_key(date_label):
+    try:
+        return datetime.strptime(date_label, "%A %d %B %Y")
+    except ValueError:
+        return datetime.min
+
+
+WC_COMPLETED_STATUSES = COMPLETED_STATUSES
 
 def scrape_wc_results():
     """Fetch completed WC matches from ESPN for the last 10 days."""
@@ -83,7 +96,7 @@ def scrape_wc_results():
         day = (today - timedelta(days=offset)).strftime("%Y%m%d")
         try:
             r = requests.get(
-                "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard",
+                "https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard",
                 params={"dates": day},
                 headers=headers,
                 timeout=8,

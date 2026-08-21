@@ -6,11 +6,23 @@ from datetime import datetime
 
 CACHE_FILE       = os.path.join(os.path.dirname(__file__), "match_stats_cache.json")
 LOGOS_CACHE_FILE = os.path.join(os.path.dirname(__file__), "team_logos_cache.json")
-BASE    = "https://site.api.espn.com/apis/site/v2/sports/soccer"
+BASE    = "https://site.web.api.espn.com/apis/site/v2/sports/soccer"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 # All leagues the app tracks
 LEAGUES = ["eng.1", "esp.1", "ita.1", "ger.1", "fra.1", "eng.2", "por.1", "can.1", "fifa.world"]
+
+# League code -> display name, for grouping upcoming/results by competition
+LEAGUE_NAMES = {
+    "eng.1": "English Premier League",
+    "esp.1": "Spanish La Liga",
+    "ita.1": "Italian Serie A",
+    "ger.1": "German Bundesliga",
+    "fra.1": "French Ligue 1",
+    "eng.2": "English Championship",
+    "por.1": "Portuguese Primeira Liga",
+    "can.1": "Canadian Premier League",
+}
 
 # ESPN stat key → (display label, suffix for display value)
 ESPN_STAT_MAP = {

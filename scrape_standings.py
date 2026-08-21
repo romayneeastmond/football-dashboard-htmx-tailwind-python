@@ -14,7 +14,7 @@ QUALIFICATION_ZONES = {
 def scrape_standings(url, league_name=None):    
     # Extract league code from URL (e.g., 'eng.1' from '.../league/eng.1')
     league_code = url.split("/")[-1]
-    api_url = f"https://site.api.espn.com/apis/v2/sports/soccer/{league_code}/standings"
+    api_url = f"https://site.web.api.espn.com/apis/v2/sports/soccer/{league_code}/standings"
     
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
@@ -77,7 +77,7 @@ def scrape_standings(url, league_name=None):
 
 def scrape_wc_standings():
     """Return WC group tables: [{name, teams: [{team, logo, gp, w, d, l, gf, ga, gd, pts}]}]"""
-    api_url = "https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings"
+    api_url = "https://site.web.api.espn.com/apis/v2/sports/soccer/fifa.world/standings"
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
         response = requests.get(api_url, headers=headers, timeout=10)
